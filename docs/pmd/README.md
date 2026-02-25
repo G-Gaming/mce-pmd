@@ -1,2 +1,59 @@
-# MCE PMD Documentation
-This is the main entry point for MCE PMD documentation.
+# MCE PMD 驱动程序文档
+
+欢迎使用 MCE (Marvell Custom Ethernet) PMD 驱动程序文档。本文档为所有 MCE 网卡驱动的中央参考点。
+
+## 📚 快速导航
+
+### 主要章节
+1. [概述](1_overview.md) - MCE 驱动程序架构和基本信息
+2. [性能指标](2_metrics.md) - 性能基准和关键指标
+3. [功能特性](3_features/) - 详细的功能介绍
+   - [RSS (接收端扩展)](3_features/01_rss.md)
+   - [Flow Director (流量管理)](3_features/02_flow_director.md)
+   - [Switch Flow (交换流)](3_features/03_switch_flow.md)
+   - [FEC (前向纠错)](3_features/04_fec.md)
+   - [速率控制](3_features/05_speed_control.md)
+   - [VF 虚拟函数支持](3_features/06_vf_support.md)
+   - [Telemetry (遥测)](3_features/07_telemetry.md)
+   - [流量管理 (Traffic Management)](3_features/08_tm.md)
+4. [使用指南](4_usage/) - 配置和使用说明
+   - [编译和安装](4_usage/01_building.md)
+   - [配置指南](4_usage/02_configuration.md)
+   - [使用示例](4_usage/03_examples.md)
+
+### 文档工具
+- [聚合脚本](scripts/aggregate_docs.sh) - 将所有文档合并为单个文件
+- [预览脚本](scripts/preview_docs.sh) - 生成可预览的完整文档
+
+## 🚀 快速开始
+
+### 首次使用？
+1. 阅读 [概述](1_overview.md) 了解基本信息
+2. 查看 [性能指标](2_metrics.md) 了解性能
+3. 浏览 [功能特性](3_features/) 了解可用功能
+
+### 准备配置？
+1. 按照 [编译和安装](4_usage/01_building.md) 进行安装
+2. 参考 [配置指南](4_usage/02_configuration.md) 进行配置
+3. 查看 [使用示例](4_usage/03_examples.md) 获取示例代码
+
+## 📊 文档版本信息
+- 版本: 1.0
+- ��后更新: 2026-02-25
+- MCE PMD 驱动程序: Latest
+
+## 🔧 聚合文档
+
+要将所有文档聚合为单个文件，运行：
+```bash
+bash scripts/aggregate_docs.sh
+```
+
+要生成可预览的版本，运行：
+```bash
+bash scripts/preview_docs.sh
+```
+
+---
+
+**提示**: 每个功能文档都包含详细的配置方法和最佳实践。
