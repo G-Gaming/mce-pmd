@@ -1,0 +1,56 @@
+From de26b75dbd8fbba34be6e2b88ec39924149bd7bb Mon Sep 17 00:00:00 2001
+From: Wenbo Cao <caowenbo@tsinghua-wx.org>
+Date: Thu, 24 Dec 2020 00:07:44 -0800
+Subject: [PATCH] net/mce: add PMD skeleton
+
+mce driver init and enable build option for mce
+pmd driver
+
+For we don't actually porting to dpdk-plaform just atf a plugin to
+dpdk
+
+Signed-off-by: Wenbo Cao <caowenbo@tsinghua-wx.org>
+---
+ config/common_linuxapp | 2 ++
+ drivers/net/Makefile   | 1 +
+ mk/rte.app.mk          | 2 ++
+ 3 files changed, 5 insertions(+)
+
+diff --git a/config/common_linuxapp b/config/common_linuxapp
+index 9c5ea9d..4668afc 100644
+--- a/config/common_linuxapp
++++ b/config/common_linuxapp
+@@ -44,3 +44,5 @@ CONFIG_RTE_LIBRTE_PMD_DPAA2_EVENTDEV=y
+ CONFIG_RTE_LIBRTE_PMD_DPAA2_SEC=y
+ CONFIG_RTE_LIBRTE_PMD_DPAA2_CMDIF_RAWDEV=y
+ CONFIG_RTE_LIBRTE_PMD_DPAA2_QDMA_RAWDEV=y
++
++CONFIG_RTE_LIBRTE_MCE_PMD=y
+diff --git a/drivers/net/Makefile b/drivers/net/Makefile
+index 664398d..4d42391 100644
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -48,6 +48,7 @@ DIRS-$(CONFIG_RTE_LIBRTE_THUNDERX_NICVF_PMD) += thunderx
+ DIRS-$(CONFIG_RTE_LIBRTE_VDEV_NETVSC_PMD) += vdev_netvsc
+ DIRS-$(CONFIG_RTE_LIBRTE_VIRTIO_PMD) += virtio
+ DIRS-$(CONFIG_RTE_LIBRTE_VMXNET3_PMD) += vmxnet3
++DIRS-$(CONFIG_RTE_LIBRTE_MCE_PMD) += mce
+ 
+ ifeq ($(CONFIG_RTE_LIBRTE_KNI),y)
+ DIRS-$(CONFIG_RTE_LIBRTE_PMD_KNI) += kni
+diff --git a/mk/rte.app.mk b/mk/rte.app.mk
+index de33883..5160065 100644
+--- a/mk/rte.app.mk
++++ b/mk/rte.app.mk
+@@ -179,6 +179,8 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_VMXNET3_PMD)    += -lrte_pmd_vmxnet3_uio
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_VMBUS)          += -lrte_bus_vmbus
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_NETVSC_PMD)     += -lrte_pmd_netvsc
+ 
++_LDLIBS-$(CONFIG_RTE_LIBRTE_MCE_PMD) += -lrte_pmd_mce
++
+ ifeq ($(CONFIG_RTE_LIBRTE_BBDEV),y)
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_BBDEV_NULL)     += -lrte_pmd_bbdev_null
+ 
+-- 
+1.8.3.1
+

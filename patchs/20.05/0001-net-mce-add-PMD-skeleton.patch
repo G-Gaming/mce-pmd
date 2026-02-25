@@ -1,0 +1,62 @@
+From bc8f8fac29671d78868d29c1b1fccdf1f0598614 Mon Sep 17 00:00:00 2001
+From: Wenbo Cao <caowenbo@mucse.com>
+Date: Tue, 31 May 2022 02:19:21 +0000
+Subject: [PATCH] net/mce: add PMD skeleton
+
+Signed-off-by: Wenbo Cao <caowenbo@mucse.com>
+---
+ config/common_linux     | 2 ++
+ drivers/net/Makefile    | 1 +
+ drivers/net/meson.build | 1 +
+ mk/rte.app.mk           | 1 +
+ 4 files changed, 5 insertions(+)
+
+diff --git a/config/common_linux b/config/common_linux
+index 816810671a..913b028371 100644
+--- a/config/common_linux
++++ b/config/common_linux
+@@ -66,3 +66,5 @@ CONFIG_RTE_LIBRTE_HINIC_PMD=y
+ # Hisilicon HNS3 PMD driver
+ #
+ CONFIG_RTE_LIBRTE_HNS3_PMD=y
++
++CONFIG_RTE_LIBRTE_MCE_PMD=y
+diff --git a/drivers/net/Makefile b/drivers/net/Makefile
+index 361974eacf..8112620f40 100644
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -62,6 +62,7 @@ DIRS-$(CONFIG_RTE_LIBRTE_THUNDERX_NICVF_PMD) += thunderx
+ DIRS-$(CONFIG_RTE_LIBRTE_VDEV_NETVSC_PMD) += vdev_netvsc
+ DIRS-$(CONFIG_RTE_LIBRTE_VIRTIO_PMD) += virtio
+ DIRS-$(CONFIG_RTE_LIBRTE_VMXNET3_PMD) += vmxnet3
++DIRS-$(CONFIG_RTE_LIBRTE_MCE_PMD) += mce
+ 
+ ifeq ($(CONFIG_RTE_LIBRTE_KNI),y)
+ DIRS-$(CONFIG_RTE_LIBRTE_PMD_KNI) += kni
+diff --git a/drivers/net/meson.build b/drivers/net/meson.build
+index 266448ff26..0d51b30f99 100644
+--- a/drivers/net/meson.build
++++ b/drivers/net/meson.build
+@@ -46,6 +46,7 @@ drivers = ['af_packet',
+ 	'szedata2',
+ 	'tap',
+ 	'thunderx',
++	'mce',
+ 	'vdev_netvsc',
+ 	'vhost',
+ 	'virtio',
+diff --git a/mk/rte.app.mk b/mk/rte.app.mk
+index 0ce8cf5417..6123c985c7 100644
+--- a/mk/rte.app.mk
++++ b/mk/rte.app.mk
+@@ -233,6 +233,7 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_SOFTNIC)      += -lrte_pmd_softnic
+ endif
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_SFC_EFX_PMD)    += -lrte_pmd_sfc_efx
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_SZEDATA2)   += -lrte_pmd_szedata2 -lsze2
++_LDLIBS-$(CONFIG_RTE_LIBRTE_MCE_PMD)     += -lrte_pmd_mce
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_NFB_PMD)        += -lrte_pmd_nfb
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_NFB_PMD)        +=  $(shell command -v pkg-config > /dev/null 2>&1 && pkg-config --libs netcope-common)
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_TAP)        += -lrte_pmd_tap
+-- 
+2.27.0
+

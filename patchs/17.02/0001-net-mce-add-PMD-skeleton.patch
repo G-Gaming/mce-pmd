@@ -1,0 +1,53 @@
+From 267b063d2fa377be3af01fea87aa92f6361eeee6 Mon Sep 17 00:00:00 2001
+From: Wenbo Cao <caowenbo@mucse.com>
+Date: Thu, 14 Apr 2022 00:29:18 +0000
+Subject: [PATCH] mce driver init and enable build option for mce pmd
+ driver
+
+For we don't actually porting to dpdk-plaform just atf a plugin to
+dpdk
+
+Signed-off-by: Wenbo Cao <caowenbo@mucse.com>
+---
+ config/common_linuxapp | 2 ++
+ drivers/net/Makefile   | 1 +
+ mk/rte.app.mk          | 1 +
+ 3 files changed, 4 insertions(+)
+
+diff --git a/config/common_linuxapp b/config/common_linuxapp
+index 00ebaac3de..6270b2ba29 100644
+--- a/config/common_linuxapp
++++ b/config/common_linuxapp
+@@ -46,3 +46,5 @@ CONFIG_RTE_LIBRTE_PMD_TAP=y
+ CONFIG_RTE_LIBRTE_NFP_PMD=y
+ CONFIG_RTE_LIBRTE_POWER=y
+ CONFIG_RTE_VIRTIO_USER=y
++
++CONFIG_RTE_LIBRTE_MCE_PMD=y
+diff --git a/drivers/net/Makefile b/drivers/net/Makefile
+index 40fc3337f1..1f81189f2e 100644
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -54,6 +54,7 @@ DIRS-$(CONFIG_RTE_LIBRTE_SFC_EFX_PMD) += sfc
+ DIRS-$(CONFIG_RTE_LIBRTE_PMD_SZEDATA2) += szedata2
+ DIRS-$(CONFIG_RTE_LIBRTE_PMD_TAP) += tap
+ DIRS-$(CONFIG_RTE_LIBRTE_THUNDERX_NICVF_PMD) += thunderx
++DIRS-$(CONFIG_RTE_LIBRTE_MCE_PMD) += mce
+ DIRS-$(CONFIG_RTE_LIBRTE_VIRTIO_PMD) += virtio
+ DIRS-$(CONFIG_RTE_LIBRTE_VMXNET3_PMD) += vmxnet3
+ DIRS-$(CONFIG_RTE_LIBRTE_PMD_XENVIRT) += xenvirt
+diff --git a/mk/rte.app.mk b/mk/rte.app.mk
+index 92f3635564..000dee9389 100644
+--- a/mk/rte.app.mk
++++ b/mk/rte.app.mk
+@@ -126,6 +126,7 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_SFC_EFX_PMD)    += -lrte_pmd_sfc_efx
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_SZEDATA2)   += -lrte_pmd_szedata2 -lsze2
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_TAP)        += -lrte_pmd_tap
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_THUNDERX_NICVF_PMD) += -lrte_pmd_thunderx_nicvf -lm
++_LDLIBS-$(CONFIG_RTE_LIBRTE_MCE_PMD)     += -lrte_pmd_mce
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_VIRTIO_PMD)     += -lrte_pmd_virtio
+ ifeq ($(CONFIG_RTE_LIBRTE_VHOST),y)
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_VHOST)      += -lrte_pmd_vhost
+-- 
+2.27.0
+

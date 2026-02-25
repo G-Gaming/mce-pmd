@@ -1,0 +1,69 @@
+From dc21bee7f3d31718a08f9ac8d4fc7db7fe535985 Mon Sep 17 00:00:00 2001
+From: Wenbo Cao <caowenbo@mucse.com>
+Date: Wed, 13 Aug 2025 14:26:14 +0800
+Subject: [PATCH] mce driver init and enable build option for mce pmd
+
+Signed-off-by: Wenbo Cao <caowenbo@mucse.com>
+---
+ config/common_base      | 5 +++++
+ drivers/net/Makefile    | 1 +
+ drivers/net/meson.build | 2 +-
+ mk/rte.app.mk           | 1 +
+ 4 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/config/common_base b/config/common_base
+index ad03cf4339..d0ea76b562 100644
+--- a/config/common_base
++++ b/config/common_base
+@@ -319,6 +319,11 @@ CONFIG_RTE_LIBRTE_THUNDERX_NICVF_PMD=y
+ CONFIG_RTE_LIBRTE_THUNDERX_NICVF_DEBUG_RX=n
+ CONFIG_RTE_LIBRTE_THUNDERX_NICVF_DEBUG_TX=n
+ 
++#
++# Compile burst-oriented Mucse N10 PMD driver
++#
++CONFIG_RTE_LIBRTE_MCE_PMD=y
++
+ #
+ # Compile burst-oriented Cavium LiquidIO PMD driver
+ #
+diff --git a/drivers/net/Makefile b/drivers/net/Makefile
+index e1127326b5..2ff52d4f7a 100644
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -39,6 +39,7 @@ DIRS-$(CONFIG_RTE_LIBRTE_SFC_EFX_PMD) += sfc
+ DIRS-$(CONFIG_RTE_LIBRTE_PMD_SZEDATA2) += szedata2
+ DIRS-$(CONFIG_RTE_LIBRTE_PMD_TAP) += tap
+ DIRS-$(CONFIG_RTE_LIBRTE_THUNDERX_NICVF_PMD) += thunderx
++DIRS-$(CONFIG_RTE_LIBRTE_MCE_PMD) += mce
+ DIRS-$(CONFIG_RTE_LIBRTE_VDEV_NETVSC_PMD) += vdev_netvsc
+ DIRS-$(CONFIG_RTE_LIBRTE_VIRTIO_PMD) += virtio
+ DIRS-$(CONFIG_RTE_LIBRTE_VMXNET3_PMD) += vmxnet3
+diff --git a/drivers/net/meson.build b/drivers/net/meson.build
+index 704cbe3c8c..a36f314adf 100644
+--- a/drivers/net/meson.build
++++ b/drivers/net/meson.build
+@@ -3,7 +3,7 @@
+ 
+ drivers = ['af_packet', 'bonding',
+ 	'e1000', 'fm10k', 'i40e', 'ixgbe',
+-	'null', 'octeontx', 'pcap', 'ring',
++	'null', 'octeontx', 'pcap', 'ring', 'mce',
+ 	'sfc', 'thunderx']
+ std_deps = ['ethdev', 'kvargs'] # 'ethdev' also pulls in mbuf, net, eal etc
+ std_deps += ['bus_pci']         # very many PMDs depend on PCI, so make std
+diff --git a/mk/rte.app.mk b/mk/rte.app.mk
+index 3eb41d176d..3230956fac 100644
+--- a/mk/rte.app.mk
++++ b/mk/rte.app.mk
+@@ -167,6 +167,7 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_SFC_EFX_PMD)    += -lrte_pmd_sfc_efx
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_SZEDATA2)   += -lrte_pmd_szedata2 -lsze2
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_TAP)        += -lrte_pmd_tap
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_THUNDERX_NICVF_PMD) += -lrte_pmd_thunderx_nicvf
++_LDLIBS-$(CONFIG_RTE_LIBRTE_MCE_PMD)     += -lrte_pmd_mce
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_VDEV_NETVSC_PMD) += -lrte_pmd_vdev_netvsc
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_VIRTIO_PMD)     += -lrte_pmd_virtio
+ ifeq ($(CONFIG_RTE_LIBRTE_VHOST),y)
+-- 
+2.43.0
+

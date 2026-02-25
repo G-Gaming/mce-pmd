@@ -1,0 +1,56 @@
+From 73f86c0702d8c2916c9b9550659a455a9f9910fd Mon Sep 17 00:00:00 2001
+From: Wenbo Cao <caowenbo@mucse.com>
+Date: Wed, 31 Aug 2022 09:17:13 +0000
+Subject: [PATCH] For we don't actually porting to dpdk-plaform just atf a
+ plugin to dpdk
+
+Signed-off-by: Wenbo Cao <caowenbo@mucse.com>
+---
+ config/common_base   | 5 +++++
+ drivers/net/Makefile | 1 +
+ mk/rte.app.mk        | 1 +
+ 3 files changed, 7 insertions(+)
+
+diff --git a/config/common_base b/config/common_base
+index 4bff83af7b..8adbaa2461 100644
+--- a/config/common_base
++++ b/config/common_base
+@@ -271,6 +271,11 @@ CONFIG_RTE_LIBRTE_THUNDERX_NICVF_DEBUG_TX=n
+ CONFIG_RTE_LIBRTE_THUNDERX_NICVF_DEBUG_DRIVER=n
+ CONFIG_RTE_LIBRTE_THUNDERX_NICVF_DEBUG_MBOX=n
+
++#
++# Compile burst-oriented Mucse N10 PMD driver
++#
++CONFIG_RTE_LIBRTE_MCE_PMD=y
++
+ #
+ # Compile burst-oriented VIRTIO PMD driver
+ #
+diff --git a/drivers/net/Makefile b/drivers/net/Makefile
+index bc9323093c..1d704fafbf 100644
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -52,6 +52,7 @@ DIRS-$(CONFIG_RTE_LIBRTE_QEDE_PMD) += qede
+ DIRS-$(CONFIG_RTE_LIBRTE_PMD_RING) += ring
+ DIRS-$(CONFIG_RTE_LIBRTE_PMD_SZEDATA2) += szedata2
+ DIRS-$(CONFIG_RTE_LIBRTE_THUNDERX_NICVF_PMD) += thunderx
++DIRS-$(CONFIG_RTE_LIBRTE_MCE_PMD) += mce
+ DIRS-$(CONFIG_RTE_LIBRTE_VIRTIO_PMD) += virtio
+ DIRS-$(CONFIG_RTE_LIBRTE_VMXNET3_PMD) += vmxnet3
+ DIRS-$(CONFIG_RTE_LIBRTE_PMD_XENVIRT) += xenvirt
+diff --git a/mk/rte.app.mk b/mk/rte.app.mk
+index f75f0e24d0..dfcc69ef0b 100644
+--- a/mk/rte.app.mk
++++ b/mk/rte.app.mk
+@@ -125,6 +125,7 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_QEDE_PMD)       += -lrte_pmd_qede
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_RING)       += -lrte_pmd_ring
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_SZEDATA2)   += -lrte_pmd_szedata2 -lsze2
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_THUNDERX_NICVF_PMD) += -lrte_pmd_thunderx_nicvf -lm
++_LDLIBS-$(CONFIG_RTE_LIBRTE_MCE_PMD)     += -lrte_pmd_mce
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_VIRTIO_PMD)     += -lrte_pmd_virtio
+ ifeq ($(CONFIG_RTE_LIBRTE_VHOST),y)
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_VHOST)      += -lrte_pmd_vhost
+-- 
+2.27.0
+

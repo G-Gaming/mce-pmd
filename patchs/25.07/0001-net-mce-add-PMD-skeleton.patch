@@ -1,0 +1,25 @@
+From 2428f9e8fa2643f18d11fbfada9fd0ad42852e23 Mon Sep 17 00:00:00 2001
+From: Your Name <you@example.com>
+Date: Thu, 28 Aug 2025 07:52:23 +0800
+Subject: [PATCH] net: add support mce meson setup
+
+Signed-off-by: Your Name <you@example.com>
+---
+ drivers/net/meson.build | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/meson.build b/drivers/net/meson.build
+index 61f8cdd..efaca37 100644
+--- a/drivers/net/meson.build
++++ b/drivers/net/meson.build
+@@ -35,6 +35,7 @@ drivers = [
+         'intel/cpfl',  # depends on idpf, so must come after it
+         'ionic',
+         'mana',
++        'mce',
+         'memif',
+         'mlx4',
+         'mlx5',
+-- 
+1.8.3.1
+

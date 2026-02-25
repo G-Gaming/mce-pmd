@@ -1,0 +1,63 @@
+From 349cd9d255e001a0f1d479084051424981e34222 Mon Sep 17 00:00:00 2001
+From: Wenbo Cao <caowenbo@mucse.com>
+Date: Wed, 13 Aug 2025 14:22:04 +0800
+Subject: [PATCH] net/mce: add PMD skeleto
+
+Signed-off-by: Wenbo Cao <caowenbo@mucse.com>
+---
+ config/common_linux     | 2 ++
+ drivers/net/Makefile    | 1 +
+ drivers/net/meson.build | 1 +
+ mk/rte.app.mk           | 2 ++
+ 4 files changed, 6 insertions(+)
+
+diff --git a/config/common_linux b/config/common_linux
+index 816810671a..57993a7ab3 100644
+--- a/config/common_linux
++++ b/config/common_linux
+@@ -66,3 +66,5 @@ CONFIG_RTE_LIBRTE_HINIC_PMD=y
+ # Hisilicon HNS3 PMD driver
+ #
+ CONFIG_RTE_LIBRTE_HNS3_PMD=y
++
++CONFIG_RTE_LIBRTE_MCE_PMD=y
+diff --git a/drivers/net/Makefile b/drivers/net/Makefile
+index 4a7f155fcd..5323ed413d 100644
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -61,6 +61,7 @@ DIRS-$(CONFIG_RTE_LIBRTE_THUNDERX_NICVF_PMD) += thunderx
+ DIRS-$(CONFIG_RTE_LIBRTE_VDEV_NETVSC_PMD) += vdev_netvsc
+ DIRS-$(CONFIG_RTE_LIBRTE_VIRTIO_PMD) += virtio
+ DIRS-$(CONFIG_RTE_LIBRTE_VMXNET3_PMD) += vmxnet3
++DIRS-$(CONFIG_RTE_LIBRTE_MCE_PMD) += mce
+ 
+ ifeq ($(CONFIG_RTE_LIBRTE_KNI),y)
+ DIRS-$(CONFIG_RTE_LIBRTE_PMD_KNI) += kni
+diff --git a/drivers/net/meson.build b/drivers/net/meson.build
+index b0ea8fedec..854c10b876 100644
+--- a/drivers/net/meson.build
++++ b/drivers/net/meson.build
+@@ -40,6 +40,7 @@ drivers = ['af_packet',
+ 	'pfe',
+ 	'qede',
+ 	'ring',
++        'mce',
+ 	'sfc',
+ 	'softnic',
+ 	'szedata2',
+diff --git a/mk/rte.app.mk b/mk/rte.app.mk
+index d295ca0a52..ce3e98ace2 100644
+--- a/mk/rte.app.mk
++++ b/mk/rte.app.mk
+@@ -332,6 +332,8 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_OCTEONTX2_EVENTDEV) += -lrte_pmd_octeontx2_event
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_OPDL_EVENTDEV) += -lrte_pmd_opdl_event
+ endif # CONFIG_RTE_LIBRTE_EVENTDEV
+ 
++_LDLIBS-$(CONFIG_RTE_LIBRTE_MCE_PMD) += -lrte_pmd_mce
++
+ ifeq ($(CONFIG_RTE_LIBRTE_RAWDEV),y)
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_SKELETON_RAWDEV) += -lrte_rawdev_skeleton
+ ifeq ($(CONFIG_RTE_EAL_VFIO)$(CONFIG_RTE_LIBRTE_FSLMC_BUS),yy)
+-- 
+2.43.0
+

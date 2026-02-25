@@ -1,0 +1,2606 @@
+From 31fbd21190f673fecec02da2dd32a9d36d8073dc Mon Sep 17 00:00:00 2001
+From: SunChengLian <sunchenglian@loongson.cn>
+Date: Mon, 3 Aug 2020 18:08:34 +0800
+Subject: [PATCH] DPDK 20.02 Add Loongson3a Support
+
+Signed-off-by: SunChengLian <sunchenglian@loongson.cn>
+---
+ app/test/test_lpm.c                                |  20 +
+ app/test/test_lpm_perf.c                           |   9 +
+ app/test/test_mcslock.c                            |   2 +-
+ app/test/test_ticketlock.c                         |   2 +-
+ app/test/test_xmmt_ops.h                           |  21 +
+ drivers/event/opdl/opdl_ring.c                     |   1 +
+ drivers/net/e1000/igb_rxtx.c                       |  14 +-
+ drivers/net/ixgbe/Makefile                         |   2 +
+ drivers/net/ixgbe/base/ixgbe_82599.c               |   2 +-
+ drivers/net/ixgbe/ixgbe_rxtx.c                     |   5 +-
+ drivers/net/memif/rte_eth_memif.h                  |   1 +
+ examples/l2fwd/main.c                              |  68 ++-
+ examples/l3fwd/l3fwd.h                             |  16 +-
+ examples/l3fwd/l3fwd_em.c                          |  24 +
+ examples/l3fwd/l3fwd_lpm.c                         |  25 +-
+ examples/l3fwd/l3fwd_lpm.h                         |   6 +
+ examples/l3fwd/main.c                              |  66 +++
+ kernel/linux/igb_uio/igb_uio.c                     |  28 ++
+ lib/librte_acl/Makefile                            |   2 +
+ lib/librte_acl/rte_acl.c                           |   2 +
+ lib/librte_eal/common/arch/loongson/meson.build    |   5 +
+ lib/librte_eal/common/arch/loongson/rte_cpuflags.c |  55 +++
+ lib/librte_eal/common/arch/loongson/rte_cycles.c   |  11 +
+ .../common/arch/loongson/rte_hypervisor.c          |  11 +
+ lib/librte_eal/common/eal_common_options.c         |   5 +-
+ .../common/include/arch/loongson/meson.build       |  16 +
+ .../common/include/arch/loongson/rte_atomic.h      | 493 +++++++++++++++++++++
+ .../common/include/arch/loongson/rte_byteorder.h   | 130 ++++++
+ .../common/include/arch/loongson/rte_cpuflags.h    |  53 +++
+ .../common/include/arch/loongson/rte_cycles.h      |  86 ++++
+ .../common/include/arch/loongson/rte_io.h          |  47 ++
+ .../common/include/arch/loongson/rte_memcpy.h      |  87 ++++
+ .../common/include/arch/loongson/rte_pause.h       |  19 +
+ .../common/include/arch/loongson/rte_prefetch.h    |  67 +++
+ .../common/include/arch/loongson/rte_rwlock.h      |  70 +++
+ .../common/include/arch/loongson/rte_spinlock.h    | 142 ++++++
+ .../common/include/arch/loongson/rte_vect.h        |  66 +++
+ lib/librte_eal/common/include/rte_memory.h         |   1 +
+ lib/librte_eal/common/include/rte_memzone.h        |   4 +
+ lib/librte_eal/common/malloc_heap.c                |   3 +
+ lib/librte_eal/linux/eal/eal_memory.c              |   2 +-
+ lib/librte_lpm/Makefile                            |   2 +
+ lib/librte_lpm/rte_lpm.h                           |   4 +-
+ lib/librte_lpm/rte_lpm_loongson.h                  |  66 +++
+ mk/arch/loongson/rte.vars.mk                       |  44 ++
+ mk/machine/3A2K/rte.vars.mk                        |  57 +++
+ mk/toolchain/gcc/rte.vars.mk                       |   8 +
+ 47 files changed, 1845 insertions(+), 25 deletions(-)
+ create mode 100644 lib/librte_eal/common/arch/loongson/meson.build
+ create mode 100644 lib/librte_eal/common/arch/loongson/rte_cpuflags.c
+ create mode 100644 lib/librte_eal/common/arch/loongson/rte_cycles.c
+ create mode 100644 lib/librte_eal/common/arch/loongson/rte_hypervisor.c
+ create mode 100644 lib/librte_eal/common/include/arch/loongson/meson.build
+ create mode 100644 lib/librte_eal/common/include/arch/loongson/rte_atomic.h
+ create mode 100644 lib/librte_eal/common/include/arch/loongson/rte_byteorder.h
+ create mode 100644 lib/librte_eal/common/include/arch/loongson/rte_cpuflags.h
+ create mode 100644 lib/librte_eal/common/include/arch/loongson/rte_cycles.h
+ create mode 100644 lib/librte_eal/common/include/arch/loongson/rte_io.h
+ create mode 100644 lib/librte_eal/common/include/arch/loongson/rte_memcpy.h
+ create mode 100644 lib/librte_eal/common/include/arch/loongson/rte_pause.h
+ create mode 100644 lib/librte_eal/common/include/arch/loongson/rte_prefetch.h
+ create mode 100644 lib/librte_eal/common/include/arch/loongson/rte_rwlock.h
+ create mode 100644 lib/librte_eal/common/include/arch/loongson/rte_spinlock.h
+ create mode 100644 lib/librte_eal/common/include/arch/loongson/rte_vect.h
+ create mode 100644 lib/librte_lpm/rte_lpm_loongson.h
+ create mode 100644 mk/arch/loongson/rte.vars.mk
+ create mode 100644 mk/machine/3A2K/rte.vars.mk
+
+diff --git a/app/test/test_lpm.c b/app/test/test_lpm.c
+index 3a3fd09..24e00ce 100644
+--- a/app/test/test_lpm.c
++++ b/app/test/test_lpm.c
+@@ -19,6 +19,10 @@
+ 	}                                                                     \
+ } while(0)
+ 
++#ifdef RTE_ARCH_NO_VECTOR
++void vect_set_epi32(int i3, int i2, int i1, int i0, xmm_t *store);
++#endif
++
+ typedef int32_t (*rte_lpm_test)(void);
+ 
+ static int32_t test0(void);
+@@ -327,7 +331,11 @@ test7(void)
+ 	status = rte_lpm_lookup(lpm, ip, &next_hop_return);
+ 	TEST_LPM_ASSERT((status == 0) && (next_hop_return == next_hop_add));
+ 
++#ifdef RTE_ARCH_NO_VECTOR
++	vect_set_epi32(ip, ip + 0x100, ip - 0x100, ip, &ipx4);
++#else
+ 	ipx4 = vect_set_epi32(ip, ip + 0x100, ip - 0x100, ip);
++#endif
+ 	rte_lpm_lookupx4(lpm, ipx4, hop, UINT32_MAX);
+ 	TEST_LPM_ASSERT(hop[0] == next_hop_add);
+ 	TEST_LPM_ASSERT(hop[1] == UINT32_MAX);
+@@ -389,7 +397,11 @@ test8(void)
+ 		TEST_LPM_ASSERT((status == 0) &&
+ 			(next_hop_return == next_hop_add));
+ 
++#ifdef RTE_ARCH_NO_VECTOR
++		vect_set_epi32(ip2, ip1, ip2, ip1, &ipx4);
++#else
+ 		ipx4 = vect_set_epi32(ip2, ip1, ip2, ip1);
++#endif
+ 		rte_lpm_lookupx4(lpm, ipx4, hop, UINT32_MAX);
+ 		TEST_LPM_ASSERT(hop[0] == UINT32_MAX);
+ 		TEST_LPM_ASSERT(hop[1] == next_hop_add);
+@@ -416,7 +428,11 @@ test8(void)
+ 		status = rte_lpm_lookup(lpm, ip1, &next_hop_return);
+ 		TEST_LPM_ASSERT(status == -ENOENT);
+ 
++#ifdef RTE_ARCH_NO_VECTOR
++		vect_set_epi32(ip1, ip1, ip2, ip2, &ipx4);
++#else
+ 		ipx4 = vect_set_epi32(ip1, ip1, ip2, ip2);
++#endif
+ 		rte_lpm_lookupx4(lpm, ipx4, hop, UINT32_MAX);
+ 		if (depth != 1) {
+ 			TEST_LPM_ASSERT(hop[0] == next_hop_add);
+@@ -900,7 +916,11 @@ test12(void)
+ 		TEST_LPM_ASSERT((status == 0) &&
+ 				(next_hop_return == next_hop_add));
+ 
++#ifdef RTE_ARCH_NO_VECTOR
++		vect_set_epi32(ip, ip + 1, ip, ip - 1, &ipx4);
++#else
+ 		ipx4 = vect_set_epi32(ip, ip + 1, ip, ip - 1);
++#endif
+ 		rte_lpm_lookupx4(lpm, ipx4, hop, UINT32_MAX);
+ 		TEST_LPM_ASSERT(hop[0] == UINT32_MAX);
+ 		TEST_LPM_ASSERT(hop[1] == next_hop_add);
+diff --git a/app/test/test_lpm_perf.c b/app/test/test_lpm_perf.c
+index a2578fe..4ba06a7 100644
+--- a/app/test/test_lpm_perf.c
++++ b/app/test/test_lpm_perf.c
+@@ -29,6 +29,11 @@
+ 
+ #define MAX_RULE_NUM (1200000)
+ 
++#ifdef RTE_ARCH_NO_VECTOR
++void vect_loadu_sil128(xmm_t *p, xmm_t *store);
++#endif
++
++
+ struct route_rule {
+ 	uint32_t ip;
+ 	uint8_t depth;
+@@ -446,7 +451,11 @@ test_lpm_perf(void)
+ 			unsigned k;
+ 			xmm_t ipx4;
+ 
++#ifdef RTE_ARCH_NO_VECTOR
++			vect_loadu_sil128((xmm_t *)(ip_batch + j), &ipx4);
++#else
+ 			ipx4 = vect_loadu_sil128((xmm_t *)(ip_batch + j));
++#endif
+ 			ipx4 = *(xmm_t *)(ip_batch + j);
+ 			rte_lpm_lookupx4(lpm, ipx4, next_hops, UINT32_MAX);
+ 			for (k = 0; k < RTE_DIM(next_hops); k++)
+diff --git a/app/test/test_mcslock.c b/app/test/test_mcslock.c
+index e9359df..33aa43b 100644
+--- a/app/test/test_mcslock.c
++++ b/app/test/test_mcslock.c
+@@ -16,7 +16,7 @@
+ #include <rte_eal.h>
+ #include <rte_lcore.h>
+ #include <rte_cycles.h>
+-#include <rte_mcslock.h>
++#include <generic/rte_mcslock.h>
+ #include <rte_atomic.h>
+ 
+ #include "test.h"
+diff --git a/app/test/test_ticketlock.c b/app/test/test_ticketlock.c
+index 13bdadb..c8e1329 100644
+--- a/app/test/test_ticketlock.c
++++ b/app/test/test_ticketlock.c
+@@ -17,7 +17,7 @@
+ #include <rte_lcore.h>
+ #include <rte_memory.h>
+ #include <rte_per_lcore.h>
+-#include <rte_ticketlock.h>
++#include <generic/rte_ticketlock.h>
+ 
+ #include "test.h"
+ 
+diff --git a/app/test/test_xmmt_ops.h b/app/test/test_xmmt_ops.h
+index 8bcf0b2..232e9f0 100644
+--- a/app/test/test_xmmt_ops.h
++++ b/app/test/test_xmmt_ops.h
+@@ -49,6 +49,27 @@ vect_set_epi32(int i3, int i2, int i1, int i0)
+ 	return data;
+ }
+ 
++#elif defined(RTE_ARCH_LOONGSON)
++#ifdef RTE_ARCH_NO_VECTOR
++/* loads the xmm_t value from address p(does not need to be 16-byte aligned)*/
++static inline void vect_loadu_sil128(xmm_t *p, xmm_t *store)
++{
++	uint32_t *tmp = (uint32_t*)p;
++	memcpy(store, tmp, sizeof(xmm_t));
++}
++
++/* sets the 4 signed 32-bit integer values and returns the xmm_t variable */
++static inline void vect_set_epi32(int i3, int i2, int i1, int i0, xmm_t *store)
++{
++	store->u32[0] = i0;
++	store->u32[1] = i1;
++	store->u32[2] = i2;
++	store->u32[3] = i3;
++}
++#else
++// Add implementation of loongson vector instructions
++#endif
++
+ #endif
+ 
+ #endif /* _TEST_XMMT_OPS_H_ */
+diff --git a/drivers/event/opdl/opdl_ring.c b/drivers/event/opdl/opdl_ring.c
+index c8d19fe..4040a37 100644
+--- a/drivers/event/opdl/opdl_ring.c
++++ b/drivers/event/opdl/opdl_ring.c
+@@ -17,6 +17,7 @@
+ #include <rte_memory.h>
+ #include <rte_memzone.h>
+ #include <rte_atomic.h>
++#include <generic/rte_pause.h>
+ 
+ #include "opdl_ring.h"
+ #include "opdl_log.h"
+diff --git a/drivers/net/e1000/igb_rxtx.c b/drivers/net/e1000/igb_rxtx.c
+index 684fa4a..529416f 100644
+--- a/drivers/net/e1000/igb_rxtx.c
++++ b/drivers/net/e1000/igb_rxtx.c
+@@ -800,6 +800,8 @@ rx_desc_error_to_pkt_flags(uint32_t rx_status)
+ 		E1000_RXD_ERR_CKSUM_BIT) & E1000_RXD_ERR_CKSUM_MSK];
+ }
+ 
++uint64_t bad_pkts;
++uint64_t bad_pkts_array[100];
+ uint16_t
+ eth_igb_recv_pkts(void *rx_queue, struct rte_mbuf **rx_pkts,
+ 	       uint16_t nb_pkts)
+@@ -811,7 +813,7 @@ eth_igb_recv_pkts(void *rx_queue, struct rte_mbuf **rx_pkts,
+ 	struct igb_rx_entry *rxe;
+ 	struct rte_mbuf *rxm;
+ 	struct rte_mbuf *nmb;
+-	union e1000_adv_rx_desc rxd;
++	volatile union e1000_adv_rx_desc rxd;
+ 	uint64_t dma_addr;
+ 	uint32_t staterr;
+ 	uint32_t hlen_type_rss;
+@@ -828,6 +830,7 @@ eth_igb_recv_pkts(void *rx_queue, struct rte_mbuf **rx_pkts,
+ 	rx_ring = rxq->rx_ring;
+ 	sw_ring = rxq->sw_ring;
+ 	while (nb_rx < nb_pkts) {
++		rte_rmb();
+ 		/*
+ 		 * The order of operations here is important as the DD status
+ 		 * bit must not be read after any other descriptor fields.
+@@ -949,9 +952,14 @@ eth_igb_recv_pkts(void *rx_queue, struct rte_mbuf **rx_pkts,
+ 		pkt_flags = pkt_flags | rx_desc_status_to_pkt_flags(staterr);
+ 		pkt_flags = pkt_flags | rx_desc_error_to_pkt_flags(staterr);
+ 		rxm->ol_flags = pkt_flags;
++
+ 		rxm->packet_type = igb_rxd_pkt_info_to_pkt_type(rxd.wb.lower.
+ 						lo_dword.hs_rss.pkt_info);
+-
++#if 0
++		if(unlikely((rxm->packet_type & 0xff) != 0x11)){
++			bad_pkts_array[bad_pkts++] = rxd.wb.lower.lo_dword.hs_rss.pkt_info;
++		}
++#endif
+ 		/*
+ 		 * Store the mbuf address into the next entry of the array
+ 		 * of returned packets.
+@@ -998,7 +1006,7 @@ eth_igb_recv_scattered_pkts(void *rx_queue, struct rte_mbuf **rx_pkts,
+ 	struct rte_mbuf *last_seg;
+ 	struct rte_mbuf *rxm;
+ 	struct rte_mbuf *nmb;
+-	union e1000_adv_rx_desc rxd;
++	volatile union e1000_adv_rx_desc rxd;
+ 	uint64_t dma; /* Physical address of mbuf data buffer */
+ 	uint32_t staterr;
+ 	uint32_t hlen_type_rss;
+diff --git a/drivers/net/ixgbe/Makefile b/drivers/net/ixgbe/Makefile
+index aec56a6..e89b776 100644
+--- a/drivers/net/ixgbe/Makefile
++++ b/drivers/net/ixgbe/Makefile
+@@ -90,7 +90,9 @@ SRCS-$(CONFIG_RTE_LIBRTE_IXGBE_PMD) += ixgbe_fdir.c
+ SRCS-$(CONFIG_RTE_LIBRTE_IXGBE_PMD) += ixgbe_pf.c
+ SRCS-$(CONFIG_RTE_LIBRTE_IXGBE_PMD) += ixgbe_flow.c
+ ifeq ($(CONFIG_RTE_ARCH_ARM64),y)
++ifeq ($(CONFIG_RTE_ARCH_LOONGSON),n)
+ SRCS-$(CONFIG_RTE_LIBRTE_IXGBE_PMD) += ixgbe_rxtx_vec_neon.c
++endif
+ else ifeq ($(CONFIG_RTE_ARCH_X86),y)
+ SRCS-$(CONFIG_RTE_LIBRTE_IXGBE_PMD) += ixgbe_rxtx_vec_sse.c
+ endif
+diff --git a/drivers/net/ixgbe/base/ixgbe_82599.c b/drivers/net/ixgbe/base/ixgbe_82599.c
+index 96bdde6..ea52326 100644
+--- a/drivers/net/ixgbe/base/ixgbe_82599.c
++++ b/drivers/net/ixgbe/base/ixgbe_82599.c
+@@ -2463,7 +2463,7 @@ s32 ixgbe_reset_pipeline_82599(struct ixgbe_hw *hw)
+ 	IXGBE_WRITE_REG(hw, IXGBE_AUTOC,
+ 			autoc_reg ^ (0x4 << IXGBE_AUTOC_LMS_SHIFT));
+ 	/* Wait for AN to leave state 0 */
+-	for (i = 0; i < 10; i++) {
++	for (i = 0; i < 20; i++) {
+ 		msec_delay(4);
+ 		anlp1_reg = IXGBE_READ_REG(hw, IXGBE_ANLP1);
+ 		if (anlp1_reg & IXGBE_ANLP1_AN_STATE_MASK)
+diff --git a/drivers/net/ixgbe/ixgbe_rxtx.c b/drivers/net/ixgbe/ixgbe_rxtx.c
+index f839bca..d0061cf 100644
+--- a/drivers/net/ixgbe/ixgbe_rxtx.c
++++ b/drivers/net/ixgbe/ixgbe_rxtx.c
+@@ -1746,7 +1746,7 @@ ixgbe_recv_pkts(void *rx_queue, struct rte_mbuf **rx_pkts,
+ 	struct ixgbe_rx_entry *rxe;
+ 	struct rte_mbuf *rxm;
+ 	struct rte_mbuf *nmb;
+-	union ixgbe_adv_rx_desc rxd;
++	volatile union ixgbe_adv_rx_desc rxd;
+ 	uint64_t dma_addr;
+ 	uint32_t staterr;
+ 	uint32_t pkt_info;
+@@ -1773,6 +1773,7 @@ ixgbe_recv_pkts(void *rx_queue, struct rte_mbuf **rx_pkts,
+ 		 * not volatile, they could be reordered which could lead to
+ 		 * using invalid descriptor fields when read from rxd.
+ 		 */
++		rte_rmb();
+ 		rxdp = &rx_ring[rx_id];
+ 		staterr = rxdp->wb.upper.status_error;
+ 		if (!(staterr & rte_cpu_to_le_32(IXGBE_RXDADV_STAT_DD)))
+@@ -5914,7 +5915,7 @@ ixgbe_config_rss_filter(struct rte_eth_dev *dev,
+ }
+ 
+ /* Stubs needed for linkage when CONFIG_RTE_ARCH_PPC_64 is set */
+-#if defined(RTE_ARCH_PPC_64)
++#if defined(RTE_ARCH_PPC_64) || defined(RTE_ARCH_LOONGSON)
+ int
+ ixgbe_rx_vec_dev_conf_condition_check(struct rte_eth_dev __rte_unused *dev)
+ {
+diff --git a/drivers/net/memif/rte_eth_memif.h b/drivers/net/memif/rte_eth_memif.h
+index 0d25663..fb10617 100644
+--- a/drivers/net/memif/rte_eth_memif.h
++++ b/drivers/net/memif/rte_eth_memif.h
+@@ -14,6 +14,7 @@
+ #include <rte_ethdev_driver.h>
+ #include <rte_ether.h>
+ #include <rte_interrupts.h>
++#include <asm/unistd.h>
+ 
+ #include "memif.h"
+ 
+diff --git a/examples/l2fwd/main.c b/examples/l2fwd/main.c
+index 09257aa..c6e2a0f 100644
+--- a/examples/l2fwd/main.c
++++ b/examples/l2fwd/main.c
+@@ -53,8 +53,8 @@ static int mac_updating = 1;
+ /*
+  * Configurable number of RX/TX ring descriptors
+  */
+-#define RTE_TEST_RX_DESC_DEFAULT 1024
+-#define RTE_TEST_TX_DESC_DEFAULT 1024
++#define RTE_TEST_RX_DESC_DEFAULT 128
++#define RTE_TEST_TX_DESC_DEFAULT 512
+ static uint16_t nb_rxd = RTE_TEST_RX_DESC_DEFAULT;
+ static uint16_t nb_txd = RTE_TEST_TX_DESC_DEFAULT;
+ 
+@@ -295,6 +295,10 @@ l2fwd_usage(const char *prgname)
+ 	       "  -p PORTMASK: hexadecimal bitmask of ports to configure\n"
+ 	       "  -q NQ: number of queue (=ports) per lcore (default is 1)\n"
+ 		   "  -T PERIOD: statistics will be refreshed each PERIOD seconds (0 to disable, 10 default, 86400 maximum)\n"
++#ifdef RTE_L2_CMDLINE_PARSE_NB_RXD_TXD
++	       "  -r NRXD: number of rxd (default is 128)\n"
++	       "  -t NTXD: number of txd (default is 512)\n"
++#endif
+ 		   "  --[no-]mac-updating: Enable or disable MAC addresses updating (enabled by default)\n"
+ 		   "      When enabled:\n"
+ 		   "       - The source MAC address is replaced by the TX port MAC address\n"
+@@ -353,10 +357,48 @@ l2fwd_parse_timer_period(const char *q_arg)
+ 	return n;
+ }
+ 
++#ifdef RTE_L2_CMDLINE_PARSE_NB_RXD_TXD
++static int
++l2fwd_parse_nb_rxd(const char *q_arg)
++{
++	char *end = NULL;
++	int n;
++
++	/* parse number string */
++	n = strtol(q_arg, &end, 10);
++	if ((q_arg[0] == '\0') || (end == NULL) || (*end != '\0'))
++		return 0;
++	if (n > 4096 || n < 64)
++		return 0;
++
++	return n;
++}
++
++static int
++l2fwd_parse_nb_txd(const char *q_arg)
++{
++	char *end = NULL;
++	int n;
++
++	/* parse number string */
++	n = strtol(q_arg, &end, 10);
++	if ((q_arg[0] == '\0') || (end == NULL) || (*end != '\0'))
++		return -1;
++	if (n > 4096 || n < 64)
++		return -1;
++
++	return n;
++}
++#endif
++
+ static const char short_options[] =
+ 	"p:"  /* portmask */
+ 	"q:"  /* number of queues */
+ 	"T:"  /* timer period */
++#ifdef RTE_L2_CMDLINE_PARSE_NB_RXD_TXD
++	"r:"  /* number of rxd */
++	"t:"  /* number of txd */
++#endif
+ 	;
+ 
+ #define CMD_LINE_OPT_MAC_UPDATING "mac-updating"
+@@ -422,6 +464,28 @@ l2fwd_parse_args(int argc, char **argv)
+ 			timer_period = timer_secs;
+ 			break;
+ 
++#ifdef RTE_L2_CMDLINE_PARSE_NB_RXD_TXD
++		/* nb_rxd */
++		case 'r':
++			nb_rxd = l2fwd_parse_nb_rxd(optarg);
++			if (nb_rxd == 0) {
++				printf("invalid rxd\n");
++				l2fwd_usage(prgname);
++				return -1;
++			}
++			break;
++
++		/* nb_rxd */
++		case 't':
++			nb_txd = l2fwd_parse_nb_txd(optarg);
++			if (nb_txd == 0) {
++				printf("invalid rxd\n");
++				l2fwd_usage(prgname);
++				return -1;
++			}
++			break;
++#endif
++
+ 		/* long options */
+ 		case 0:
+ 			break;
+diff --git a/examples/l3fwd/l3fwd.h b/examples/l3fwd/l3fwd.h
+index c786f90..e9135b9 100644
+--- a/examples/l3fwd/l3fwd.h
++++ b/examples/l3fwd/l3fwd.h
+@@ -8,7 +8,7 @@
+ #include <rte_ethdev.h>
+ #include <rte_vect.h>
+ 
+-#define DO_RFC_1812_CHECKS
++//#define DO_RFC_1812_CHECKS
+ 
+ #define RTE_LOGTYPE_L3FWD RTE_LOGTYPE_USER1
+ 
+@@ -19,8 +19,8 @@
+ /*
+  * Configurable number of RX/TX ring descriptors
+  */
+-#define RTE_TEST_RX_DESC_DEFAULT 1024
+-#define RTE_TEST_TX_DESC_DEFAULT 1024
++#define RTE_TEST_RX_DESC_DEFAULT 128
++#define RTE_TEST_TX_DESC_DEFAULT 512
+ 
+ #define MAX_PKT_BURST     32
+ #define BURST_TX_DRAIN_US 100 /* TX drain every ~100us */
+@@ -94,6 +94,14 @@ extern xmm_t val_eth[RTE_MAX_ETHPORTS];
+ 
+ extern struct lcore_conf lcore_conf[RTE_MAX_LCORE];
+ 
++/* Per-port statistics struct */
++struct l3fwd_port_statistics {
++    uint64_t tx;
++    uint64_t rx;
++    uint64_t dropped;
++} __rte_cache_aligned;
++
++extern struct l3fwd_port_statistics port_statistics[RTE_MAX_ETHPORTS];
+ /* Send burst of packets on an output interface */
+ static inline int
+ send_burst(struct lcore_conf *qconf, uint16_t n, uint16_t port)
+@@ -106,6 +114,8 @@ send_burst(struct lcore_conf *qconf, uint16_t n, uint16_t port)
+ 	m_table = (struct rte_mbuf **)qconf->tx_mbufs[port].m_table;
+ 
+ 	ret = rte_eth_tx_burst(port, queueid, m_table, n);
++	port_statistics[port].tx += ret;
++	port_statistics[port].dropped += (n - ret);
+ 	if (unlikely(ret < n)) {
+ 		do {
+ 			rte_pktmbuf_free(m_table[ret]);
+diff --git a/examples/l3fwd/l3fwd_em.c b/examples/l3fwd/l3fwd_em.c
+index 1226709..6d3eb7b 100644
+--- a/examples/l3fwd/l3fwd_em.c
++++ b/examples/l3fwd/l3fwd_em.c
+@@ -239,6 +239,18 @@ em_mask_key(void *key, xmm_t mask)
+ 
+ 	return vec_and(data, mask);
+ }
++#elif defined(RTE_ARCH_LOONGSON)
++#ifndef RTE_ARCH_NO_VECTOR
++// Add the implementation of loongson vector instructions here
++#else
++	static inline void
++em_mask_key(void *key, xmm_t mask, xmm_t *res)
++{
++	xmm_t *tmp = (xmm_t*)key;
++	res->u64[0] = mask.u64[0] & tmp->u64[0];
++	res->u64[1] = mask.u64[1] & tmp->u64[1];
++}
++#endif
+ #else
+ #error No vector engine (SSE, NEON, ALTIVEC) available, check your toolchain
+ #endif
+@@ -258,7 +270,11 @@ em_get_ipv4_dst_port(void *ipv4_hdr, uint16_t portid, void *lookup_struct)
+ 	 * Get 5 tuple: dst port, src port, dst IP address,
+ 	 * src IP address and protocol.
+ 	 */
++#ifdef RTE_ARCH_NO_VECTOR
++	em_mask_key(ipv4_hdr, mask0.x, &(key.xmm));
++#else
+ 	key.xmm = em_mask_key(ipv4_hdr, mask0.x);
++#endif
+ 
+ 	/* Find destination port */
+ 	ret = rte_hash_lookup(ipv4_l3fwd_lookup_struct, (const void *)&key);
+@@ -280,7 +296,11 @@ em_get_ipv6_dst_port(void *ipv6_hdr, uint16_t portid, void *lookup_struct)
+ 	void *data2 = ((uint8_t *)ipv6_hdr) + sizeof(xmm_t) + sizeof(xmm_t);
+ 
+ 	/* Get part of 5 tuple: src IP address lower 96 bits and protocol */
++#ifdef RTE_ARCH_NO_VECTOR
++	memcpy(&(key.xmm[1]), (xmm_t *)data1, sizeof(xmm_t));
++#else
+ 	key.xmm[0] = em_mask_key(data0, mask1.x);
++#endif
+ 
+ 	/*
+ 	 * Get part of 5 tuple: dst IP address lower 96 bits
+@@ -296,7 +316,11 @@ em_get_ipv6_dst_port(void *ipv6_hdr, uint16_t portid, void *lookup_struct)
+ 	 * Get part of 5 tuple: dst port and src port
+ 	 * and dst IP address higher 32 bits.
+ 	 */
++#ifdef RTE_ARCH_NO_VECTOR
++	em_mask_key(data2, mask2.x, &(key.xmm[2]));
++#else
+ 	key.xmm[2] = em_mask_key(data2, mask2.x);
++#endif
+ 
+ 	/* Find destination port */
+ 	ret = rte_hash_lookup(ipv6_l3fwd_lookup_struct, (const void *)&key);
+diff --git a/examples/l3fwd/l3fwd_lpm.c b/examples/l3fwd/l3fwd_lpm.c
+index c97cf0b..e2d10e5 100644
+--- a/examples/l3fwd/l3fwd_lpm.c
++++ b/examples/l3fwd/l3fwd_lpm.c
+@@ -44,14 +44,22 @@ struct ipv6_l3fwd_lpm_route {
+ 
+ /* 198.18.0.0/16 are set aside for RFC2544 benchmarking (RFC5735). */
+ static const struct ipv4_l3fwd_lpm_route ipv4_l3fwd_lpm_route_array[] = {
+-	{RTE_IPV4(198, 18, 0, 0), 24, 0},
+-	{RTE_IPV4(198, 18, 1, 0), 24, 1},
+-	{RTE_IPV4(198, 18, 2, 0), 24, 2},
+-	{RTE_IPV4(198, 18, 3, 0), 24, 3},
+-	{RTE_IPV4(198, 18, 4, 0), 24, 4},
+-	{RTE_IPV4(198, 18, 5, 0), 24, 5},
+-	{RTE_IPV4(198, 18, 6, 0), 24, 6},
+-	{RTE_IPV4(198, 18, 7, 0), 24, 7},
++	{RTE_IPV4(192, 168, 0, 0), 24, 0},
++	{RTE_IPV4(192, 168, 1, 0), 24, 1},
++	{RTE_IPV4(192, 168, 2, 0), 24, 2},
++	{RTE_IPV4(192, 168, 3, 0), 24, 3},
++	{RTE_IPV4(192, 168, 4, 0), 24, 4},
++	{RTE_IPV4(192, 168, 5, 0), 24, 5},
++	{RTE_IPV4(192, 168, 6, 0), 24, 6},
++	{RTE_IPV4(192, 168, 7, 0), 24, 7},
++//	{RTE_IPV4(198, 18, 0, 0), 24, 0},
++//	{RTE_IPV4(198, 18, 1, 0), 24, 1},
++//	{RTE_IPV4(198, 18, 2, 0), 24, 2},
++//	{RTE_IPV4(198, 18, 3, 0), 24, 3},
++//	{RTE_IPV4(198, 18, 4, 0), 24, 4},
++//	{RTE_IPV4(198, 18, 5, 0), 24, 5},
++//	{RTE_IPV4(198, 18, 6, 0), 24, 6},
++//	{RTE_IPV4(198, 18, 7, 0), 24, 7},
+ };
+ 
+ /* 2001:0200::/48 is IANA reserved range for IPv6 benchmarking (RFC5180) */
+@@ -240,6 +248,7 @@ lpm_main_loop(__attribute__((unused)) void *dummy)
+ 			if (nb_rx == 0)
+ 				continue;
+ 
++			port_statistics[portid].rx += nb_rx;
+ #if defined RTE_ARCH_X86 || defined RTE_MACHINE_CPUFLAG_NEON \
+ 			 || defined RTE_ARCH_PPC_64
+ 			l3fwd_lpm_send_packets(nb_rx, pkts_burst,
+diff --git a/examples/l3fwd/l3fwd_lpm.h b/examples/l3fwd/l3fwd_lpm.h
+index d730d72..a9248e7 100644
+--- a/examples/l3fwd/l3fwd_lpm.h
++++ b/examples/l3fwd/l3fwd_lpm.h
+@@ -5,6 +5,7 @@
+ #ifndef __L3FWD_LPM_H__
+ #define __L3FWD_LPM_H__
+ 
++extern struct l3fwd_port_statistics port_statistics[RTE_MAX_ETHPORTS];
+ static __rte_always_inline void
+ l3fwd_lpm_simple_forward(struct rte_mbuf *m, uint16_t portid,
+ 		struct lcore_conf *qconf)
+@@ -70,6 +71,11 @@ l3fwd_lpm_simple_forward(struct rte_mbuf *m, uint16_t portid,
+ 
+ 		send_single_packet(qconf, m, dst_port);
+ 	} else {
++		ipv4_hdr = rte_pktmbuf_mtod_offset(m, struct rte_ipv4_hdr *,
++						sizeof(struct rte_ether_hdr));
++		dst_port = lpm_get_ipv4_dst_port(ipv4_hdr, portid,
++						qconf->ipv4_lookup_struct);
++		port_statistics[dst_port].dropped++;
+ 		/* Free the mbuf that contains non-IPV4/IPV6 packet */
+ 		rte_pktmbuf_free(m);
+ 	}
+diff --git a/examples/l3fwd/main.c b/examples/l3fwd/main.c
+index dda430d..e912dc1 100644
+--- a/examples/l3fwd/main.c
++++ b/examples/l3fwd/main.c
+@@ -867,14 +867,78 @@ check_all_ports_link_status(uint32_t port_mask)
+ 	}
+ }
+ 
++struct l3fwd_port_statistics port_statistics[RTE_MAX_ETHPORTS];
++extern uint64_t bad_pkts;
++uint64_t bad_pkts_array[100];
++
+ static void
+ signal_handler(int signum)
+ {
++	static uint64_t total_packets_dropped, total_packets_tx, total_packets_rx;
++	int portid = 0;
++	
++	total_packets_dropped = 0;
++	total_packets_tx = 0;
++	total_packets_rx = 0;
++
+ 	if (signum == SIGINT || signum == SIGTERM) {
+ 		printf("\n\nSignal %d received, preparing to exit...\n",
+ 				signum);
+ 		force_quit = true;
+ 	}
++	else if (signum == SIGUSR1){
++		memset(port_statistics, 0, RTE_MAX_ETHPORTS * sizeof(*port_statistics));
++		total_packets_dropped = 0;
++		total_packets_tx = 0;
++		total_packets_rx = 0;
++		bad_pkts = 0;
++		memset(bad_pkts_array, 0, 100*sizeof(*bad_pkts_array));
++		goto clean;
++	}
++	else if (signum == SIGUSR2){
++clean:
++		;
++		const char clr[] = { 27, '[', '2', 'J', '\0' };
++		const char topLeft[] = { 27, '[', '1', ';', '1', 'H','\0' };
++
++		/* Clear screen and move to top left */
++		printf("%s%s", clr, topLeft);
++
++
++		printf("\nPort statistics ====================================");
++		for (portid = 0; portid < RTE_MAX_ETHPORTS; portid++) {
++			/* skip disabled ports */
++			if ((enabled_port_mask & (1 << portid)) == 0)
++				continue;
++			printf("\nStatistics for port %u ------------------------------"
++					"\nPackets sent: %24"PRIu64
++					"\nPackets received: %20"PRIu64
++					"\nPackets dropped: %21"PRIu64,
++					portid,
++					port_statistics[portid].tx,
++					port_statistics[portid].rx,
++					port_statistics[portid].dropped);
++
++			total_packets_dropped += port_statistics[portid].dropped;
++			total_packets_tx += port_statistics[portid].tx;
++			total_packets_rx += port_statistics[portid].rx;
++		}
++
++		printf("\nAggregate statistics ==============================="
++				"\nTotal packets sent: %18"PRIu64
++				"\nTotal packets received: %14"PRIu64
++				"\nTotal packets dropped: %15"PRIu64
++				"\nTotal packets bad: %19"PRIu64,
++				total_packets_tx,
++				total_packets_rx,
++				total_packets_dropped,
++				bad_pkts);
++		printf("\n");
++		uint64_t i;
++		for(i=0; i<bad_pkts; i++)
++			printf("0x%lx ", bad_pkts_array[i]);
++		printf("\n====================================================\n");
++	}
+ }
+ 
+ static int
+@@ -1201,6 +1265,8 @@ main(int argc, char **argv)
+ 	force_quit = false;
+ 	signal(SIGINT, signal_handler);
+ 	signal(SIGTERM, signal_handler);
++	signal(SIGUSR1, signal_handler);
++	signal(SIGUSR2, signal_handler);
+ 
+ 	/* pre-init dst MACs for all ports to 02:00:00:00:00:xx */
+ 	for (portid = 0; portid < RTE_MAX_ETHPORTS; portid++) {
+diff --git a/kernel/linux/igb_uio/igb_uio.c b/kernel/linux/igb_uio/igb_uio.c
+index 039f5a5..a06e8a9 100644
+--- a/kernel/linux/igb_uio/igb_uio.c
++++ b/kernel/linux/igb_uio/igb_uio.c
+@@ -456,6 +456,22 @@ igbuio_setup_bars(struct pci_dev *dev, struct uio_info *info)
+ 	return (iom != 0 || iop != 0) ? ret : -ENOENT;
+ }
+ 
++#include <linux/workqueue.h>
++#include <linux/timer.h>
++
++static volatile int once = 0;
++struct delayed_work state_queue;
++void start_state_machine(struct work_struct *work)
++{
++	queue_delayed_work(system_power_efficient_wq, &state_queue, HZ);
++	return;
++}
++
++void stop_state_machine(void)
++{
++	cancel_delayed_work_sync(&state_queue);
++}
++
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0)
+ static int __devinit
+ #else
+@@ -468,6 +484,13 @@ igbuio_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
+ 	void *map_addr;
+ 	int err;
+ 
++	if(!once)
++	{
++		once = 1;
++		INIT_DELAYED_WORK(&state_queue, start_state_machine);
++		queue_delayed_work(system_power_efficient_wq, &state_queue, HZ);
++	}
++
+ #ifdef HAVE_PCI_IS_BRIDGE_API
+ 	if (pci_is_bridge(dev)) {
+ 		dev_warn(&dev->dev, "Ignoring PCI bridge device\n");
+@@ -570,6 +593,11 @@ igbuio_pci_remove(struct pci_dev *dev)
+ {
+ 	struct rte_uio_pci_dev *udev = pci_get_drvdata(dev);
+ 
++	if(once == 1)
++	{
++		stop_state_machine();
++		once = 0;
++	}
+ 	igbuio_pci_release(&udev->info, NULL);
+ 
+ 	sysfs_remove_group(&dev->dev.kobj, &dev_attr_grp);
+diff --git a/lib/librte_acl/Makefile b/lib/librte_acl/Makefile
+index f4332b0..9acbe62 100644
+--- a/lib/librte_acl/Makefile
++++ b/lib/librte_acl/Makefile
+@@ -28,6 +28,8 @@ CFLAGS_acl_run_neon.o += -Wno-maybe-uninitialized
+ endif
+ else ifeq ($(CONFIG_RTE_ARCH_PPC_64),y)
+ SRCS-$(CONFIG_RTE_LIBRTE_ACL) += acl_run_altivec.c
++else ifeq ($(CONFIG_RTE_ARCH_LOONGSON),y)
++SRCS-$(CONFIG_RTE_LIBRTE_ACL) +=
+ else
+ SRCS-$(CONFIG_RTE_LIBRTE_ACL) += acl_run_sse.c
+ endif
+diff --git a/lib/librte_acl/rte_acl.c b/lib/librte_acl/rte_acl.c
+index 777ec4d..cbed35c 100644
+--- a/lib/librte_acl/rte_acl.c
++++ b/lib/librte_acl/rte_acl.c
+@@ -116,6 +116,8 @@ RTE_INIT(rte_acl_init)
+ 		alg =  RTE_ACL_CLASSIFY_NEON;
+ #elif defined(RTE_ARCH_PPC_64)
+ 	alg = RTE_ACL_CLASSIFY_ALTIVEC;
++#elif defined(RTE_ARCH_LOONGSON)
++	alg = RTE_ACL_CLASSIFY_SCALAR;
+ #else
+ #ifdef CC_AVX2_SUPPORT
+ 	if (rte_cpu_get_flag_enabled(RTE_CPUFLAG_AVX2))
+diff --git a/lib/librte_eal/common/arch/loongson/meson.build b/lib/librte_eal/common/arch/loongson/meson.build
+new file mode 100644
+index 0000000..79731e1
+--- /dev/null
++++ b/lib/librte_eal/common/arch/loongson/meson.build
+@@ -0,0 +1,5 @@
++# SPDX-License-Identifier: BSD-3-Clause
++# Copyright(c) 2017 Intel Corporation.
++
++eal_common_arch_sources = files('rte_cpuflags.c',
++	'rte_cycles.c', 'rte_hypervisor.c')
+diff --git a/lib/librte_eal/common/arch/loongson/rte_cpuflags.c b/lib/librte_eal/common/arch/loongson/rte_cpuflags.c
+new file mode 100644
+index 0000000..185ef8d
+--- /dev/null
++++ b/lib/librte_eal/common/arch/loongson/rte_cpuflags.c
+@@ -0,0 +1,55 @@
++/*
++ *   BSD LICENSE
++ *
++ *   Copyright (C) EZchip Semiconductor Ltd. 2015.
++ *
++ *   Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions
++ *   are met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in
++ *       the documentation and/or other materials provided with the
++ *       distribution.
++ *     * Neither the name of EZchip Semiconductor nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++*/
++
++#include "rte_cpuflags.h"
++
++#include <errno.h>
++#include <stdlib.h>
++
++struct feature_entry {};
++const struct feature_entry rte_cpu_feature_table[] = {
++};
++
++/*
++ * Checks if a particular flag is available on current machine.
++ */
++int
++rte_cpu_get_flag_enabled(__attribute__((unused)) enum rte_cpu_flag_t feature)
++{
++	return -ENOENT;
++}
++
++const char *
++rte_cpu_get_flag_name(enum rte_cpu_flag_t feature)
++{
++    return NULL;
++}
+diff --git a/lib/librte_eal/common/arch/loongson/rte_cycles.c b/lib/librte_eal/common/arch/loongson/rte_cycles.c
+new file mode 100644
+index 0000000..5749b98
+--- /dev/null
++++ b/lib/librte_eal/common/arch/loongson/rte_cycles.c
+@@ -0,0 +1,11 @@
++/* SPDX-License-Identifier: BSD-3-Clause
++ * Copyright(c) 2015 Cavium, Inc
++ */
++
++#include "eal_private.h"
++
++uint64_t
++get_tsc_freq_arch(void)
++{
++	return 0;
++}
+diff --git a/lib/librte_eal/common/arch/loongson/rte_hypervisor.c b/lib/librte_eal/common/arch/loongson/rte_hypervisor.c
+new file mode 100644
+index 0000000..08a1c97
+--- /dev/null
++++ b/lib/librte_eal/common/arch/loongson/rte_hypervisor.c
+@@ -0,0 +1,11 @@
++/* SPDX-License-Identifier: BSD-3-Clause
++ * Copyright 2017 Mellanox Technologies, Ltd
++ */
++
++#include "rte_hypervisor.h"
++
++enum rte_hypervisor
++rte_hypervisor_get(void)
++{
++	return RTE_HYPERVISOR_UNKNOWN;
++}
+diff --git a/lib/librte_eal/common/eal_common_options.c b/lib/librte_eal/common/eal_common_options.c
+index 75974dd..2d31b0f 100644
+--- a/lib/librte_eal/common/eal_common_options.c
++++ b/lib/librte_eal/common/eal_common_options.c
+@@ -1125,10 +1125,11 @@ eal_parse_base_virtaddr(const char *arg)
+ 	/* align the addr on 16M boundary, 16MB is the minimum huge page
+ 	 * size on IBM Power architecture. If the addr is aligned to 16MB,
+ 	 * it can align to 2MB for x86. So this alignment can also be used
+-	 * on x86 and other architectures.
++	 * on x86 and other architectures, loongson arch use 32MB huge page
++	 * size.
+ 	 */
+ 	internal_config.base_virtaddr =
+-		RTE_PTR_ALIGN_CEIL((uintptr_t)addr, (size_t)RTE_PGSIZE_16M);
++		RTE_PTR_ALIGN_CEIL((uintptr_t)addr, (size_t)RTE_PGSIZE_32M);
+ 
+ 	return 0;
+ }
+diff --git a/lib/librte_eal/common/include/arch/loongson/meson.build b/lib/librte_eal/common/include/arch/loongson/meson.build
+new file mode 100644
+index 0000000..436cc0b
+--- /dev/null
++++ b/lib/librte_eal/common/include/arch/loongson/meson.build
+@@ -0,0 +1,16 @@
++# SPDX-License-Identifier: BSD-3-Clause
++# Copyright(c) 2017 Intel Corporation.
++
++install_headers(
++'rte_atomic.h' ,
++'rte_byteorder.h' ,
++'rte_cpuflags.h' ,
++'rte_cycles.h' ,
++'rte_io.h' ,
++'rte_memcpy.h' ,
++'rte_pause.h' ,
++'rte_prefetch.h' ,
++'rte_rwlock.h' ,
++'rte_spinlock.h' ,
++'rte_vect.h' ,
++subdir: get_option('include_subdir_arch'))
+diff --git a/lib/librte_eal/common/include/arch/loongson/rte_atomic.h b/lib/librte_eal/common/include/arch/loongson/rte_atomic.h
+new file mode 100644
+index 0000000..001bcf3
+--- /dev/null
++++ b/lib/librte_eal/common/include/arch/loongson/rte_atomic.h
+@@ -0,0 +1,493 @@
++/*
++ *   BSD LICENSE
++ *
++ *   Copyright (C) EZchip Semiconductor Ltd. 2015.
++ *
++ *   Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions
++ *   are met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in
++ *       the documentation and/or other materials provided with the
++ *       distribution.
++ *     * Neither the name of EZchip Semiconductor nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++*/
++
++#ifndef _RTE_ATOMIC_LOONGSON_H_
++#define _RTE_ATOMIC_LOONGSON_H_
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#include <stdint.h>
++#include "generic/rte_atomic.h"
++
++/**
++ * MIPS Synchronize
++ */
++#if 1
++static inline void synchronize(void)
++{
++    __asm__ __volatile__("sync":::"memory");
++}
++#else
++
++#define __sync()                \
++    __asm__ __volatile__(           \
++        ".set   push\n\t"       \
++        ".set   noreorder\n\t"      \
++        ".set   mips2\n\t"      \
++        "sync\n\t"          \
++        ".set   pop"            \
++        : /* no output */       \
++        : /* no input */        \
++        : "memory")
++
++#define  __wbflush()	\
++    __asm__ __volatile__ (	\
++		".set\tpush\n\t"	\
++        ".set\tnoreorder\n\t"	\
++        ".set mips3\n\t"	\
++        "sync\n\t"	\
++        "nop\n\t"	\
++        ".set\tpop\n\t"	\
++        ".set mips0\n\t")
++
++#define wbflush()           \
++	do {                \
++		__sync();       \
++		__wbflush();        \
++	} while (0)
++
++#define synchronize() wbflush()
++#endif
++
++/**
++ * General memory barrier.
++ *
++ * Guarantees that the LOAD and STORE operations generated before the
++ * barrier occur before the LOAD and STORE operations generated after.
++ * This function is architecture dependent.
++ */
++#define rte_mb() synchronize()
++
++/**
++ * Write memory barrier.
++ *
++ * Guarantees that the STORE operations generated before the barrier
++ * occur before the STORE operations generated after.
++ * This function is architecture dependent.
++ */
++#define rte_wmb() synchronize()
++
++/**
++ * Read memory barrier.
++ *
++ * Guarantees that the LOAD operations generated before the barrier
++ * occur before the LOAD operations generated after.
++ * This function is architecture dependent.
++ */
++#define rte_rmb() synchronize()
++
++#define rte_smp_mb() rte_mb()
++
++#define rte_smp_wmb() rte_mb()
++
++#define rte_smp_rmb() rte_mb()
++
++#define rte_io_mb() rte_mb()
++
++#define rte_io_wmb() rte_mb()
++
++#define rte_io_rmb() rte_mb()
++
++#define rte_cio_wmb() rte_mb()
++
++#define rte_cio_rmb() rte_mb()
++
++/*
++ * Helper Functions
++ */
++
++static inline void
++mips_atomic32_add(rte_atomic32_t *v, int32_t i)
++{
++    int32_t temp = 0;
++    __asm__ __volatile__(
++		"1:	ll %[tmp], %[cnt] \n"
++		"	add	%[tmp], %[i] \n"
++		"	sc %[tmp], %[cnt] \n"
++		"	beqzl %[tmp], 1b \n"
++		: [tmp] "=&r" (temp), [cnt] "+m" (v->cnt)
++		: [i] "Ir" (i));
++}
++
++static inline int32_t
++mips_atomic32_add_and_return(rte_atomic32_t *v, int32_t i)
++{
++    int32_t temp = 0;
++    int32_t rVal = 0;
++    __asm__ __volatile__(
++		"1:	ll %[tmp], %[cnt] \n"
++		"	add	%[tmp], %[i] \n"
++        "   move %[rv], %[tmp] \n"
++		"	sc %[tmp], %[cnt] \n"
++		"	beqzl %[tmp], 1b \n"
++		: [tmp] "=&r" (temp), [cnt] "+m" (v->cnt), [rv] "=&r"(rVal)
++		: [i] "Ir" (i));
++
++    return rVal;
++}
++
++static inline void
++mips_atomic32_sub(rte_atomic32_t *v, int32_t i)
++{
++    int32_t temp = 0;
++    __asm__ __volatile__(
++		"1:	ll %[tmp], %[cnt] \n"
++		"	sub	%[tmp], %[i] \n"
++		"	sc %[tmp], %[cnt] \n"
++		"	beqzl %[tmp], 1b \n"
++		: [tmp] "=&r" (temp), [cnt] "+m" (v->cnt)
++		: [i] "Ir" (i));
++}
++
++static inline int32_t
++mips_atomic32_sub_and_return(rte_atomic32_t *v, int32_t i)
++{
++    int32_t temp = 0;
++    int32_t rVal = 0;
++    __asm__ __volatile__(
++		"1:	ll %[tmp], %[cnt] \n"
++		"	sub	%[tmp], %[i] \n"
++        "   move %[rv], %[tmp] \n"
++		"	sc %[tmp], %[cnt] \n"
++		"	beqzl %[tmp], 1b \n"
++		: [tmp] "=&r" (temp), [cnt] "+m" (v->cnt), [rv] "=&r"(rVal)
++		: [i] "Ir" (i));
++
++    return rVal;
++}
++
++static inline void
++mips_atomic64_add(rte_atomic64_t *v, int64_t i)
++{
++	int64_t temp = 0;
++
++	__asm__ __volatile__(
++		"1:	lld %[tmp], %[cnt] \n"
++		"	dadd	%[tmp], %[i] \n"
++		"	scd %[tmp], %[cnt] \n"
++		"	beqzl %[tmp], 1b \n"
++		: [tmp] "=&r" (temp), [cnt] "+m" (v->cnt)
++		: [i] "Ir" (i));
++}
++
++static inline int64_t
++mips_atomic64_add_and_return(rte_atomic64_t *v, int64_t i)
++{
++	int64_t temp = 0;
++    int64_t rVal = 0;
++
++	__asm__ __volatile__(
++		"1:	lld %[tmp], %[cnt] \n"
++		"	dadd	%[tmp], %[i] \n"
++        "   move %[rv], %[tmp] \n"
++		"	scd %[tmp], %[cnt] \n"
++		"	beqzl %[tmp], 1b \n"
++		: [tmp] "=&r" (temp), [cnt] "+m" (v->cnt), [rv] "=&r"(rVal)
++		: [i] "Ir" (i));
++
++    return rVal;
++}
++
++static inline void
++mips_atomic64_sub(rte_atomic64_t *v, int64_t i)
++{
++	int64_t temp = 0;
++
++	__asm__ __volatile__(
++		"1:	lld %[tmp], %[cnt] \n"
++		"	dsub %[tmp], %[i] \n"
++		"	scd %[tmp], %[cnt] \n"
++		"	beqzl %[tmp], 1b \n"
++		: [tmp] "=&r" (temp), [cnt] "+m" (v->cnt)
++		: [i] "Ir" (i));
++}
++
++static inline int64_t
++mips_atomic64_sub_and_return(rte_atomic64_t *v, int64_t i)
++{
++	int64_t temp = 0;
++    int64_t rVal = 0;
++
++	__asm__ __volatile__(
++		"1:	lld %[tmp], %[cnt] \n"
++		"	dsub %[tmp], %[i] \n"
++        "   move %[rv], %[tmp] \n"
++		"	scd %[tmp], %[cnt] \n"
++		"	beqzl %[tmp], 1b \n"
++		: [tmp] "=&r" (temp), [cnt] "+m" (v->cnt), [rv] "=&r"(rVal)
++		: [i] "Ir" (i));
++
++    return rVal;
++}
++
++static inline int
++mips_atomic32_cmpset(volatile uint32_t *dst, uint32_t exp, uint32_t src)
++{
++    uint32_t res = 0, temp = 0;
++    __asm__ __volatile__(
++        "1: ll %[tmp], %[dst]  \n"
++        "   li %[res], 0 \n"
++        "   bne %[tmp], %[exp], 2f \n"
++        "   move %[tmp], %[src] \n"
++        "   sc %[tmp], %[dst] \n"
++        "   li %[res], 1 \n"
++        "   beqz %[tmp], 1b \n"
++        "2: \n"
++        : [res] "=&r"(res),
++          [tmp] "+&r"(temp),
++          [dst] "+m"(*dst)
++        : [src] "r"(src),
++          [exp] "r"(exp),
++          "m"(*dst)
++        : "memory"
++        );
++
++    return res;
++}
++
++static inline int
++mips_atomic64_cmpset(volatile uint64_t *dst, uint64_t exp, uint64_t src)
++{
++    uint32_t res = 0;
++    uint64_t temp = 0;
++    __asm__ __volatile__(
++        "1: lld %[tmp], %[dst]  \n"
++        "   li %[res], 0 \n"
++        "   bne %[tmp], %[exp], 2f \n"
++        "   move %[tmp], %[src] \n"
++        "   scd %[tmp], %[dst] \n"
++        "   li %[res], 1 \n"
++        "   beqz %[tmp], 1b \n"
++        "2: \n"
++        : [res] "=&r"(res),
++          [tmp] "+&r"(temp),
++          [dst] "+m"(*dst)
++        : [src] "r"(src),
++          [exp] "r"(exp),
++          "m"(*dst)
++        : "memory"
++        );
++
++    return res;
++}
++
++#ifndef RTE_FORCE_INTRINSICS
++static inline int
++rte_atomic16_cmpset(volatile uint16_t *dst, uint16_t exp, uint16_t src)
++{
++	return __sync_bool_compare_and_swap(dst, exp, src);
++}
++
++static inline int rte_atomic16_test_and_set(rte_atomic16_t *v)
++{
++	return rte_atomic16_cmpset((volatile uint16_t *)&v->cnt, 0, 1);
++}
++
++static inline void
++rte_atomic16_inc(rte_atomic16_t *v)
++{
++	rte_atomic16_add(v, 1);
++}
++
++static inline void
++rte_atomic16_dec(rte_atomic16_t *v)
++{
++	rte_atomic16_sub(v, 1);
++}
++
++static inline int rte_atomic16_inc_and_test(rte_atomic16_t *v)
++{
++	return __sync_add_and_fetch(&v->cnt, 1) == 0;
++}
++
++static inline int rte_atomic16_dec_and_test(rte_atomic16_t *v)
++{
++	return __sync_sub_and_fetch(&v->cnt, 1) == 0;
++}
++
++/*------------------------- 32 bit atomic operations -------------------------*/
++
++static inline int
++rte_atomic32_cmpset(volatile uint32_t *dst, uint32_t exp, uint32_t src)
++{
++	return mips_atomic32_cmpset(dst, exp, src);
++}
++
++static inline int rte_atomic32_test_and_set(rte_atomic32_t *v)
++{
++	return rte_atomic32_cmpset((volatile uint32_t *)&v->cnt, 0, 1);
++}
++
++static inline void
++rte_atomic32_inc(rte_atomic32_t *v)
++{
++	mips_atomic32_add(v, 1); 
++}
++
++static inline void
++rte_atomic32_dec(rte_atomic32_t *v)
++{
++	mips_atomic32_sub(v, 1); 
++}
++
++static inline int rte_atomic32_inc_and_test(rte_atomic32_t *v)
++{
++	return mips_atomic32_add_and_return(v, 1) == 0;
++}
++
++static inline int rte_atomic32_dec_and_test(rte_atomic32_t *v)
++{
++	return mips_atomic32_sub_and_return(v, 1) == 0;
++}
++
++/*------------------------- 64 bit atomic operations -------------------------*/
++static inline int
++rte_atomic64_cmpset(volatile uint64_t *dst, uint64_t exp, uint64_t src)
++{
++	return mips_atomic64_cmpset(dst, exp, src);
++}
++
++static inline void
++rte_atomic64_init(rte_atomic64_t *v)
++{
++    //int64_t temp = 0;
++    //__asm__ __volatile__(
++    //    "1: lld %[tmp], %[cnt] \n"
++    //    "   li %[tmp], 0 \n"
++    //    "   scd %[tmp], %[cnt] \n"
++    //    "   beqz %[tmp], 1b \n"
++    //    : [cnt] "+m" (v->cnt), [tmp] "+&r" (temp)
++    //    : "m"(v->cnt)
++    //    : "memory"
++    //    );
++    v->cnt = 0;
++}
++
++static inline int64_t
++rte_atomic64_read(rte_atomic64_t *v)
++{
++	//int64_t temp = 0, res = 0;
++    //__asm__ __volatile__(
++    //    "1: lld %[tmp], %[cnt] \n"
++    //    "   move %[res], %[tmp] \n"
++    //    "   scd %[tmp], %[cnt] \n"
++    //    "   beqz %[tmp], 1b \n"
++    //    : [cnt] "+m" (v->cnt), [res] "=&r" (res), [tmp] "+&r" (temp)
++    //    : "m"(v->cnt)
++    //    : "memory"
++    //    );
++
++    //return res;
++
++    return v->cnt;
++}
++
++static inline void
++rte_atomic64_set(rte_atomic64_t *v, int64_t new_value)
++{
++    //uint64_t temp = 0;
++    //__asm__ __volatile__(
++    //    "1: lld %[tmp], %[cnt] \n"
++    //    "   move %[tmp], %[nv] \n"
++    //    "   scd %[tmp], %[cnt] \n"
++    //    "   beqz %[tmp], 1b \n"
++    //    : [cnt] "+m" (v->cnt), [tmp] "+&r" (temp)
++    //    : [nv] "r" (new_value), "m"(v->cnt)
++    //    : "memory"
++    //    );
++    v->cnt = new_value;
++}
++
++static inline void
++rte_atomic64_add(rte_atomic64_t *v, int64_t inc)
++{
++    mips_atomic64_add(v, inc);
++}
++
++static inline void
++rte_atomic64_sub(rte_atomic64_t *v, int64_t dec)
++{
++	mips_atomic64_sub(v, dec);
++}
++
++static inline void
++rte_atomic64_inc(rte_atomic64_t *v)
++{
++	mips_atomic64_add(v, 1); 
++}
++
++static inline void
++rte_atomic64_dec(rte_atomic64_t *v)
++{
++	mips_atomic64_sub(v, 1); 
++}
++
++static inline int64_t
++rte_atomic64_add_return(rte_atomic64_t *v, int64_t inc)
++{
++    return mips_atomic64_add_and_return(v, inc);
++}
++
++static inline int64_t
++rte_atomic64_sub_return(rte_atomic64_t *v, int64_t dec)
++{
++    return mips_atomic64_sub_and_return(v, dec);
++}
++
++static inline int rte_atomic64_inc_and_test(rte_atomic64_t *v)
++{
++    return mips_atomic64_add_and_return(v, 1) == 0;
++}
++
++static inline int rte_atomic64_dec_and_test(rte_atomic64_t *v)
++{
++    return mips_atomic64_sub_and_return(v, 1) == 0;
++}
++
++static inline int rte_atomic64_test_and_set(rte_atomic64_t *v)
++{
++	return rte_atomic64_cmpset((volatile uint64_t *)&v->cnt, 0, 1);
++}
++
++static inline void rte_atomic64_clear(rte_atomic64_t *v)
++{
++    rte_atomic64_set(v, 0);
++}
++#endif
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _RTE_ATOMIC_LOONGSON_H_ */
+diff --git a/lib/librte_eal/common/include/arch/loongson/rte_byteorder.h b/lib/librte_eal/common/include/arch/loongson/rte_byteorder.h
+new file mode 100644
+index 0000000..f372f33
+--- /dev/null
++++ b/lib/librte_eal/common/include/arch/loongson/rte_byteorder.h
+@@ -0,0 +1,130 @@
++/*
++ *   BSD LICENSE
++ *
++ *   Copyright (C) EZchip Semiconductor Ltd. 2015.
++ *
++ *   Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions
++ *   are met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in
++ *       the documentation and/or other materials provided with the
++ *       distribution.
++ *     * Neither the name of EZchip Semiconductor nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++*/
++
++#ifndef _RTE_BYTEORDER_LOONGSON_H_
++#define _RTE_BYTEORDER_LOONGSON_H_
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#include "generic/rte_byteorder.h"
++
++/*
++ * An architecture-optimized byte swap for a 16-bit value.
++ *
++ * Do not use this function directly. The preferred function is rte_bswap16().
++ */
++//static inline uint16_t rte_arch_bswap16(uint16_t _x)
++//{
++//	register uint16_t x = _x;
++//    
++//	return x;
++//}
++
++/*
++ * An architecture-optimized byte swap for a 32-bit value.
++ *
++ * Do not use this function directly. The preferred function is rte_bswap32().
++ */
++//static inline uint32_t rte_arch_bswap32(uint32_t _x)
++//{
++//	register uint32_t x = _x;
++//    
++//	return x;
++//}
++
++/*
++ * An architecture-optimized byte swap for a 64-bit value.
++ *
++  * Do not use this function directly. The preferred function is rte_bswap64().
++ */
++/* 64-bit mode */
++//static inline uint64_t rte_arch_bswap64(uint64_t _x)
++//{
++//	register uint64_t x = _x;
++//    
++//	return x;
++//}
++
++#ifndef RTE_FORCE_INTRINSICS
++#define rte_bswap16(x) rte_constant_bswap16(x)
++#define rte_bswap32(x) rte_constant_bswap32(x)
++#define rte_bswap64(x) rte_constant_bswap64(x)
++#else
++#if !(__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
++#define rte_bswap16(x) rte_constant_bswap16(x)
++#endif
++#endif
++
++#if RTE_BYTE_ORDER == RTE_LITTLE_ENDIAN
++
++#define rte_cpu_to_le_16(x) (x)
++#define rte_cpu_to_le_32(x) (x)
++#define rte_cpu_to_le_64(x) (x)
++
++#define rte_cpu_to_be_16(x) rte_bswap16(x)
++#define rte_cpu_to_be_32(x) rte_bswap32(x)
++#define rte_cpu_to_be_64(x) rte_bswap64(x)
++
++#define rte_le_to_cpu_16(x) (x)
++#define rte_le_to_cpu_32(x) (x)
++#define rte_le_to_cpu_64(x) (x)
++
++#define rte_be_to_cpu_16(x) rte_bswap16(x)
++#define rte_be_to_cpu_32(x) rte_bswap32(x)
++#define rte_be_to_cpu_64(x) rte_bswap64(x)
++
++#else /* RTE_BIG_ENDIAN */
++
++#define rte_cpu_to_le_16(x) rte_bswap16(x)
++#define rte_cpu_to_le_32(x) rte_bswap32(x)
++#define rte_cpu_to_le_64(x) rte_bswap64(x)
++
++#define rte_cpu_to_be_16(x) (x)
++#define rte_cpu_to_be_32(x) (x)
++#define rte_cpu_to_be_64(x) (x)
++
++#define rte_le_to_cpu_16(x) rte_bswap16(x)
++#define rte_le_to_cpu_32(x) rte_bswap32(x)
++#define rte_le_to_cpu_64(x) rte_bswap64(x)
++
++#define rte_be_to_cpu_16(x) (x)
++#define rte_be_to_cpu_32(x) (x)
++#define rte_be_to_cpu_64(x) (x)
++#endif
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _RTE_BYTEORDER_LOONGSON_H_ */
+diff --git a/lib/librte_eal/common/include/arch/loongson/rte_cpuflags.h b/lib/librte_eal/common/include/arch/loongson/rte_cpuflags.h
+new file mode 100644
+index 0000000..9fffd4b
+--- /dev/null
++++ b/lib/librte_eal/common/include/arch/loongson/rte_cpuflags.h
+@@ -0,0 +1,53 @@
++/*
++ *   BSD LICENSE
++ *
++ *   Copyright (C) EZchip Semiconductor Ltd. 2015.
++ *
++ *   Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions
++ *   are met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in
++ *       the documentation and/or other materials provided with the
++ *       distribution.
++ *     * Neither the name of EZchip Semiconductor nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++*/
++
++#ifndef _RTE_CPUFLAGS_LOONGSON_H_
++#define _RTE_CPUFLAGS_LOONGSON_H_
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/**
++ * Enumeration of all CPU features supported
++ */
++enum rte_cpu_flag_t {
++	RTE_CPUFLAG_NUMFLAGS /**< This should always be the last! */
++};
++
++#include "generic/rte_cpuflags.h"
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _RTE_CPUFLAGS_LOONGSON_H_ */
+diff --git a/lib/librte_eal/common/include/arch/loongson/rte_cycles.h b/lib/librte_eal/common/include/arch/loongson/rte_cycles.h
+new file mode 100644
+index 0000000..9463de8
+--- /dev/null
++++ b/lib/librte_eal/common/include/arch/loongson/rte_cycles.h
+@@ -0,0 +1,86 @@
++/*
++ *   BSD LICENSE
++ *
++ *   Copyright (C) EZchip Semiconductor Ltd. 2015.
++ *
++ *   Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions
++ *   are met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in
++ *       the documentation and/or other materials provided with the
++ *       distribution.
++ *     * Neither the name of EZchip Semiconductor nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++*/
++
++#ifndef _RTE_CYCLES_LOONGSON_H_
++#define _RTE_CYCLES_LOONGSON_H_
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#include "generic/rte_cycles.h"
++#include <time.h>
++#include <sys/time.h>
++
++static inline uint64_t
++get_cycle_count(void)
++{
++        uint64_t count;
++#ifndef RTE_MACHINE_LS2K
++        __asm__ __volatile__ (
++                "rdhwr %[cycles], $30\n"
++                : [cycles] "=r" (count) ::);
++#else
++		struct timespec tp = {0, 0}; 
++		clock_gettime(CLOCK_MONOTONIC, &tp);
++		count = tp.tv_sec*1000000000 + tp.tv_nsec;	
++#endif
++        return count;
++}
++
++/**
++ * Read the time base register.
++ *
++ * @return
++ *   The time base for this lcore.
++ */
++static inline uint64_t
++rte_rdtsc(void)
++{
++	return get_cycle_count();
++}
++
++static inline uint64_t
++rte_rdtsc_precise(void)
++{
++	rte_mb();
++	return rte_rdtsc();
++}
++
++static inline uint64_t
++rte_get_tsc_cycles(void) { return rte_rdtsc(); }
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _RTE_CYCLES_LOONGSON_H_ */
+diff --git a/lib/librte_eal/common/include/arch/loongson/rte_io.h b/lib/librte_eal/common/include/arch/loongson/rte_io.h
+new file mode 100644
+index 0000000..2ded042
+--- /dev/null
++++ b/lib/librte_eal/common/include/arch/loongson/rte_io.h
+@@ -0,0 +1,47 @@
++/*
++ *   BSD LICENSE
++ *
++ *   Copyright(c) 2016 Cavium networks. All rights reserved.
++ *   All rights reserved.
++ *
++ *   Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions
++ *   are met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in
++ *       the documentation and/or other materials provided with the
++ *       distribution.
++ *     * Neither the name of Cavium networks nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef _RTE_IO_LOONGSON_H_
++#define _RTE_IO_LOONGSON_H_
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#include "generic/rte_io.h"
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _RTE_IO_LOONGSON_H_ */
+diff --git a/lib/librte_eal/common/include/arch/loongson/rte_memcpy.h b/lib/librte_eal/common/include/arch/loongson/rte_memcpy.h
+new file mode 100644
+index 0000000..66a7797
+--- /dev/null
++++ b/lib/librte_eal/common/include/arch/loongson/rte_memcpy.h
+@@ -0,0 +1,87 @@
++/*
++ *   BSD LICENSE
++ *
++ *   Copyright (C) EZchip Semiconductor Ltd. 2015.
++ *
++ *   Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions
++ *   are met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in
++ *       the documentation and/or other materials provided with the
++ *       distribution.
++ *     * Neither the name of EZchip Semiconductor nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++*/
++
++#ifndef _RTE_MEMCPY_LOONGSON_H_
++#define _RTE_MEMCPY_LOONGSON_H_
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#include <stdint.h>
++#include <string.h>
++
++#include "generic/rte_memcpy.h"
++
++static inline void
++rte_mov16(uint8_t *dst, const uint8_t *src)
++{
++	memcpy(dst, src, 16);
++}
++
++static inline void
++rte_mov32(uint8_t *dst, const uint8_t *src)
++{
++	memcpy(dst, src, 32);
++}
++
++static inline void
++rte_mov48(uint8_t *dst, const uint8_t *src)
++{
++	memcpy(dst, src, 48);
++}
++
++static inline void
++rte_mov64(uint8_t *dst, const uint8_t *src)
++{
++	memcpy(dst, src, 64);
++}
++
++static inline void
++rte_mov128(uint8_t *dst, const uint8_t *src)
++{
++	memcpy(dst, src, 128);
++}
++
++static inline void
++rte_mov256(uint8_t *dst, const uint8_t *src)
++{
++	memcpy(dst, src, 256);
++}
++
++#define rte_memcpy(d, s, n)	memcpy((d), (s), (n))
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _RTE_MEMCPY_LOONGSON_H_ */
+diff --git a/lib/librte_eal/common/include/arch/loongson/rte_pause.h b/lib/librte_eal/common/include/arch/loongson/rte_pause.h
+new file mode 100644
+index 0000000..e9c9df8
+--- /dev/null
++++ b/lib/librte_eal/common/include/arch/loongson/rte_pause.h
+@@ -0,0 +1,19 @@
++/* SPDX-License-Identifier: BSD-3-Clause
++ * Copyright(c) 2017 Cavium, Inc
++ */
++
++#ifndef _RTE_PAUSE_LOONGSON_H_
++#define _RTE_PAUSE_LOONGSON_H_
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#include "generic/rte_pause.h"
++
++static inline void rte_pause(void)
++{
++	asm volatile("sync" ::: "memory");
++}
++
++#endif /* _RTE_PAUSE_LOONGSON_H_ */
+diff --git a/lib/librte_eal/common/include/arch/loongson/rte_prefetch.h b/lib/librte_eal/common/include/arch/loongson/rte_prefetch.h
+new file mode 100644
+index 0000000..7e2fe59
+--- /dev/null
++++ b/lib/librte_eal/common/include/arch/loongson/rte_prefetch.h
+@@ -0,0 +1,67 @@
++/*
++ *   BSD LICENSE
++ *
++ *   Copyright (C) EZchip Semiconductor Ltd. 2015.
++ *
++ *   Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions
++ *   are met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in
++ *       the documentation and/or other materials provided with the
++ *       distribution.
++ *     * Neither the name of EZchip Semiconductor nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++*/
++
++#ifndef _RTE_PREFETCH_LOONGSON_H_
++#define _RTE_PREFETCH_LOONGSON_H_
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#include "generic/rte_prefetch.h"
++
++static inline void rte_prefetch0(const volatile void *p)
++{
++	__builtin_prefetch((const void *)(uintptr_t)p, 0, 3);
++}
++
++static inline void rte_prefetch1(const volatile void *p)
++{
++	__builtin_prefetch((const void *)(uintptr_t)p, 0, 2);
++}
++
++static inline void rte_prefetch2(const volatile void *p)
++{
++	__builtin_prefetch((const void *)(uintptr_t)p, 0, 1);
++}
++
++static inline void rte_prefetch_non_temporal(const volatile void *p)
++{
++	/* non-temporal version not available, fallback to rte_prefetch0 */
++	rte_prefetch0(p);
++}
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _RTE_PREFETCH_LOONGSON_H_ */
+diff --git a/lib/librte_eal/common/include/arch/loongson/rte_rwlock.h b/lib/librte_eal/common/include/arch/loongson/rte_rwlock.h
+new file mode 100644
+index 0000000..f6ddf2b
+--- /dev/null
++++ b/lib/librte_eal/common/include/arch/loongson/rte_rwlock.h
+@@ -0,0 +1,70 @@
++/*
++ *   BSD LICENSE
++ *
++ *   Copyright (C) EZchip Semiconductor Ltd. 2015.
++ *
++ *   Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions
++ *   are met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in
++ *       the documentation and/or other materials provided with the
++ *       distribution.
++ *     * Neither the name of EZchip Semiconductor nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++*/
++
++#ifndef _RTE_RWLOCK_LOONGSON_H_
++#define _RTE_RWLOCK_LOONGSON_H_
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#include "generic/rte_rwlock.h"
++
++static inline void
++rte_rwlock_read_lock_tm(rte_rwlock_t *rwl)
++{
++	rte_rwlock_read_lock(rwl);
++}
++
++static inline void
++rte_rwlock_read_unlock_tm(rte_rwlock_t *rwl)
++{
++	rte_rwlock_read_unlock(rwl);
++}
++
++static inline void
++rte_rwlock_write_lock_tm(rte_rwlock_t *rwl)
++{
++	rte_rwlock_write_lock(rwl);
++}
++
++static inline void
++rte_rwlock_write_unlock_tm(rte_rwlock_t *rwl)
++{
++	rte_rwlock_write_unlock(rwl);
++}
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _RTE_RWLOCK_LOONGSON_H_ */
+diff --git a/lib/librte_eal/common/include/arch/loongson/rte_spinlock.h b/lib/librte_eal/common/include/arch/loongson/rte_spinlock.h
+new file mode 100644
+index 0000000..fc11856
+--- /dev/null
++++ b/lib/librte_eal/common/include/arch/loongson/rte_spinlock.h
+@@ -0,0 +1,142 @@
++/*
++ *   BSD LICENSE
++ *
++ *   Copyright (C) EZchip Semiconductor Ltd. 2015.
++ *
++ *   Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions
++ *   are met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in
++ *       the documentation and/or other materials provided with the
++ *       distribution.
++ *     * Neither the name of EZchip Semiconductor nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++*/
++
++#ifndef _RTE_SPINLOCK_LOONGSON_H_
++#define _RTE_SPINLOCK_LOONGSON_H_
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#include <rte_common.h>
++#include "generic/rte_spinlock.h"
++
++#ifndef RTE_FORCE_INTRINSICS
++static inline void
++rte_spinlock_lock(rte_spinlock_t *sl)
++{
++    int temp = 0;
++    __asm__ __volatile__(
++        "1: ll %[temp], %[lock] \n" 
++        "   bnez %[temp], 1b \n"
++        "   li %[temp], 1 \n"
++        "   sc %[temp], %[lock] \n"
++        "   beqz %[temp], 1b \n"
++        : [lock] "+m" (sl->locked),
++          [temp] "+&r"(temp)
++        : "m"(sl->locked)
++        : "memory"
++        );
++}
++
++static inline void
++rte_spinlock_unlock (rte_spinlock_t *sl)
++{
++    int temp = 0;
++    __asm__ __volatile__(
++        "1: ll %[temp], %[lock] \n"
++        "   li %[temp], 0 \n"
++        "   sc %[temp], %[lock] \n"
++        "   beqz %[temp], 1b \n"
++        : [lock] "+m" (sl->locked),
++          [temp] "+&r"(temp) 
++        : "m"(sl->locked)
++        : "memory"
++        );
++}
++
++static inline int
++rte_spinlock_trylock (rte_spinlock_t *sl)
++{
++    int temp = 0, res = 1;
++    __asm__ __volatile__(
++        "1: ll %[res], %[lock] \n"
++        "   li %[temp], 1 \n"
++        "   sc %[temp], %[lock] \n"
++        "   beqz %[temp], 1b \n"
++        : [lock] "+m" (sl->locked),
++          [res] "=&r" (res),
++          [temp] "+&r"(temp) 
++        : "m"(sl->locked)
++        : "memory"
++        );
++
++    return res == 0;
++}
++#endif
++
++static inline int rte_tm_supported(void)
++{
++	return 0;
++}
++
++static inline void
++rte_spinlock_lock_tm(rte_spinlock_t *sl)
++{
++	rte_spinlock_lock(sl); /* fall-back */
++}
++
++static inline int
++rte_spinlock_trylock_tm(rte_spinlock_t *sl)
++{
++	return rte_spinlock_trylock(sl);
++}
++
++static inline void
++rte_spinlock_unlock_tm(rte_spinlock_t *sl)
++{
++	rte_spinlock_unlock(sl);
++}
++
++static inline void
++rte_spinlock_recursive_lock_tm(rte_spinlock_recursive_t *slr)
++{
++	rte_spinlock_recursive_lock(slr); /* fall-back */
++}
++
++static inline void
++rte_spinlock_recursive_unlock_tm(rte_spinlock_recursive_t *slr)
++{
++	rte_spinlock_recursive_unlock(slr);
++}
++
++static inline int
++rte_spinlock_recursive_trylock_tm(rte_spinlock_recursive_t *slr)
++{
++	return rte_spinlock_recursive_trylock(slr);
++}
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _RTE_SPINLOCK_LOONGSON_H_ */
+diff --git a/lib/librte_eal/common/include/arch/loongson/rte_vect.h b/lib/librte_eal/common/include/arch/loongson/rte_vect.h
+new file mode 100644
+index 0000000..6940200
+--- /dev/null
++++ b/lib/librte_eal/common/include/arch/loongson/rte_vect.h
+@@ -0,0 +1,66 @@
++/*-
++ *   BSD LICENSE
++ *
++ *   Copyright(c) 2015 Cavium Networks. All rights reserved.
++ *
++ *   Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions
++ *   are met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in
++ *       the documentation and/or other materials provided with the
++ *       distribution.
++ *     * Neither the name of Cavium Networks nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef _RTE_VECT_LOONGSON_H_
++#define _RTE_VECT_LOONGSON_H_
++
++#include <stdint.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#define	XMM_SIZE	(128)
++#define	XMM_MASK	(XMM_SIZE - 1)
++
++typedef union xmm {
++	uint8_t  u8[XMM_SIZE / sizeof(uint8_t)];
++	uint16_t u16[XMM_SIZE / sizeof(uint16_t)];
++	uint32_t u32[XMM_SIZE / sizeof(uint32_t)];
++	uint64_t u64[XMM_SIZE / sizeof(uint64_t)];
++	double   pd[XMM_SIZE / sizeof(double)];
++} __attribute__((aligned(16))) xmm_t;
++
++typedef union rte_xmm {
++    xmm_t x;
++	uint8_t  u8[XMM_SIZE / sizeof(uint8_t)];
++	uint16_t u16[XMM_SIZE / sizeof(uint16_t)];
++	uint32_t u32[XMM_SIZE / sizeof(uint32_t)];
++	uint64_t u64[XMM_SIZE / sizeof(uint64_t)];
++	double   pd[XMM_SIZE / sizeof(double)];
++} __attribute__((aligned(16))) rte_xmm_t;
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif
+diff --git a/lib/librte_eal/common/include/rte_memory.h b/lib/librte_eal/common/include/rte_memory.h
+index 3d8d0bd..74a0909 100644
+--- a/lib/librte_eal/common/include/rte_memory.h
++++ b/lib/librte_eal/common/include/rte_memory.h
+@@ -31,6 +31,7 @@ enum rte_page_sizes {
+ 	RTE_PGSIZE_256K  = 1ULL << 18,
+ 	RTE_PGSIZE_2M    = 1ULL << 21,
+ 	RTE_PGSIZE_16M   = 1ULL << 24,
++	RTE_PGSIZE_32M   = 1ULL << 25,
+ 	RTE_PGSIZE_256M  = 1ULL << 28,
+ 	RTE_PGSIZE_512M  = 1ULL << 29,
+ 	RTE_PGSIZE_1G    = 1ULL << 30,
+diff --git a/lib/librte_eal/common/include/rte_memzone.h b/lib/librte_eal/common/include/rte_memzone.h
+index f478fa9..d04e1cc 100644
+--- a/lib/librte_eal/common/include/rte_memzone.h
++++ b/lib/librte_eal/common/include/rte_memzone.h
+@@ -41,6 +41,7 @@ extern "C" {
+ #define RTE_MEMZONE_4GB            0x00080000   /**< Use 4GB pages. */
+ #define RTE_MEMZONE_SIZE_HINT_ONLY 0x00000004   /**< Use available page size */
+ #define RTE_MEMZONE_IOVA_CONTIG    0x00100000   /**< Ask for IOVA-contiguous memzone. */
++#define RTE_MEMZONE_32MB           0x00004000   /**< Use 32MB pages. */
+ 
+ /**
+  * A structure describing a memzone, which is a contiguous portion of
+@@ -104,6 +105,7 @@ struct rte_memzone {
+  *   - RTE_MEMZONE_2MB - Reserved from 2MB pages
+  *   - RTE_MEMZONE_1GB - Reserved from 1GB pages
+  *   - RTE_MEMZONE_16MB - Reserved from 16MB pages
++ *   - RTE_MEMZONE_32MB - Reserved from 32MB pages
+  *   - RTE_MEMZONE_16GB - Reserved from 16GB pages
+  *   - RTE_MEMZONE_256KB - Reserved from 256KB pages
+  *   - RTE_MEMZONE_256MB - Reserved from 256MB pages
+@@ -168,6 +170,7 @@ const struct rte_memzone *rte_memzone_reserve(const char *name,
+  *   - RTE_MEMZONE_2MB - Reserved from 2MB pages
+  *   - RTE_MEMZONE_1GB - Reserved from 1GB pages
+  *   - RTE_MEMZONE_16MB - Reserved from 16MB pages
++ *   - RTE_MEMZONE_32MB - Reserved from 32MB pages
+  *   - RTE_MEMZONE_16GB - Reserved from 16GB pages
+  *   - RTE_MEMZONE_256KB - Reserved from 256KB pages
+  *   - RTE_MEMZONE_256MB - Reserved from 256MB pages
+@@ -237,6 +240,7 @@ const struct rte_memzone *rte_memzone_reserve_aligned(const char *name,
+  *   - RTE_MEMZONE_2MB - Reserved from 2MB pages
+  *   - RTE_MEMZONE_1GB - Reserved from 1GB pages
+  *   - RTE_MEMZONE_16MB - Reserved from 16MB pages
++ *   - RTE_MEMZONE_32MB - Reserved from 32MB pages
+  *   - RTE_MEMZONE_16GB - Reserved from 16GB pages
+  *   - RTE_MEMZONE_256KB - Reserved from 256KB pages
+  *   - RTE_MEMZONE_256MB - Reserved from 256MB pages
+diff --git a/lib/librte_eal/common/malloc_heap.c b/lib/librte_eal/common/malloc_heap.c
+index 842eb9d..2b3d33a 100644
+--- a/lib/librte_eal/common/malloc_heap.c
++++ b/lib/librte_eal/common/malloc_heap.c
+@@ -54,6 +54,9 @@ check_hugepage_sz(unsigned flags, uint64_t hugepage_sz)
+ 	case RTE_PGSIZE_16M:
+ 		check_flag = RTE_MEMZONE_16MB;
+ 		break;
++	case RTE_PGSIZE_32M:
++		check_flag = RTE_MEMZONE_32MB;
++		break;
+ 	case RTE_PGSIZE_256M:
+ 		check_flag = RTE_MEMZONE_256MB;
+ 		break;
+diff --git a/lib/librte_eal/linux/eal/eal_memory.c b/lib/librte_eal/linux/eal/eal_memory.c
+index 5604c2a..f0147aa 100644
+--- a/lib/librte_eal/linux/eal/eal_memory.c
++++ b/lib/librte_eal/linux/eal/eal_memory.c
+@@ -86,7 +86,7 @@ uint64_t eal_get_baseaddr(void)
+ 	 * rte_mem_check_dma_mask for ensuring all memory is within supported
+ 	 * range.
+ 	 */
+-	return 0x100000000ULL;
++	return 0x000000000ULL;
+ }
+ 
+ /*
+diff --git a/lib/librte_lpm/Makefile b/lib/librte_lpm/Makefile
+index d682785..470e1f5 100644
+--- a/lib/librte_lpm/Makefile
++++ b/lib/librte_lpm/Makefile
+@@ -24,6 +24,8 @@ else ifeq ($(CONFIG_RTE_ARCH_X86),y)
+ SYMLINK-$(CONFIG_RTE_LIBRTE_LPM)-include += rte_lpm_sse.h
+ else ifeq ($(CONFIG_RTE_ARCH_PPC_64),y)
+ SYMLINK-$(CONFIG_RTE_LIBRTE_LPM)-include += rte_lpm_altivec.h
++else ifeq ($(CONFIG_RTE_ARCH_LOONGSON),y)
++SYMLINK-$(CONFIG_RTE_LIBRTE_LPM)-include += rte_lpm_loongson.h
+ endif
+ 
+ include $(RTE_SDK)/mk/rte.lib.mk
+diff --git a/lib/librte_lpm/rte_lpm.h b/lib/librte_lpm/rte_lpm.h
+index b9d49ac..099f079 100644
+--- a/lib/librte_lpm/rte_lpm.h
++++ b/lib/librte_lpm/rte_lpm.h
+@@ -252,7 +252,7 @@ rte_lpm_delete_all(struct rte_lpm *lpm);
+  *   -EINVAL for incorrect arguments, -ENOENT on lookup miss, 0 on lookup hit
+  */
+ static inline int
+-rte_lpm_lookup(struct rte_lpm *lpm, uint32_t ip, uint32_t *next_hop)
++rte_lpm_lookup(const struct rte_lpm *lpm, uint32_t ip, uint32_t *next_hop)
+ {
+ 	unsigned tbl24_index = (ip >> 8);
+ 	uint32_t tbl_entry;
+@@ -374,6 +374,8 @@ rte_lpm_lookupx4(const struct rte_lpm *lpm, xmm_t ip, uint32_t hop[4],
+ #include "rte_lpm_neon.h"
+ #elif defined(RTE_ARCH_PPC_64)
+ #include "rte_lpm_altivec.h"
++#elif defined(RTE_ARCH_LOONGSON)
++#include "rte_lpm_loongson.h"
+ #else
+ #include "rte_lpm_sse.h"
+ #endif
+diff --git a/lib/librte_lpm/rte_lpm_loongson.h b/lib/librte_lpm/rte_lpm_loongson.h
+new file mode 100644
+index 0000000..c9f3870
+--- /dev/null
++++ b/lib/librte_lpm/rte_lpm_loongson.h
+@@ -0,0 +1,66 @@
++/*-
++ *   BSD LICENSE
++ *
++ *   Copyright(c) 2010-2014 Intel Corporation. All rights reserved.
++ *   All rights reserved.
++ *
++ *   Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions
++ *   are met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright
++ *       notice, this list of conditions and the following disclaimer in
++ *       the documentation and/or other materials provided with the
++ *       distribution.
++ *     * Neither the name of Intel Corporation nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef _RTE_LPM_LOONGSON_H_
++#define _RTE_LPM_LOONGSON_H_
++
++#include <rte_branch_prediction.h>
++#include <rte_byteorder.h>
++#include <rte_common.h>
++#include <rte_vect.h>
++#include <rte_lpm.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++static inline void
++rte_lpm_lookupx4(const struct rte_lpm *lpm, xmm_t ip, uint32_t hop[4],
++	uint32_t defv)
++
++{
++        if (rte_lpm_lookup(lpm, ip.u32[0], &(hop[0])) != 0)
++            hop[0] = defv;
++        if (rte_lpm_lookup(lpm, ip.u32[1], &(hop[1])) != 0)
++            hop[1] = defv;
++        if (rte_lpm_lookup(lpm, ip.u32[2], &(hop[2])) != 0)
++            hop[2] = defv;
++        if (rte_lpm_lookup(lpm, ip.u32[3], &(hop[3])) != 0)
++            hop[3] = defv;
++}
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _RTE_LPM_LOONGSON_H_ */
+diff --git a/mk/arch/loongson/rte.vars.mk b/mk/arch/loongson/rte.vars.mk
+new file mode 100644
+index 0000000..189dd46
+--- /dev/null
++++ b/mk/arch/loongson/rte.vars.mk
+@@ -0,0 +1,44 @@
++#   BSD LICENSE
++#
++#   Copyright (C) EZchip Semiconductor Ltd. 2015.
++#
++#   Redistribution and use in source and binary forms, with or without
++#   modification, are permitted provided that the following conditions
++#   are met:
++#
++#     * Redistributions of source code must retain the above copyright
++#       notice, this list of conditions and the following disclaimer.
++#     * Redistributions in binary form must reproduce the above copyright
++#       notice, this list of conditions and the following disclaimer in
++#       the documentation and/or other materials provided with the
++#       distribution.
++#     * Neither the name of EZchip Semiconductor nor the names of its
++#       contributors may be used to endorse or promote products derived
++#       from this software without specific prior written permission.
++#
++#   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++#   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++#   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++#   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++#   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++#   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++#   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++#   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++#   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++#   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++#   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++
++ARCH  ?= mips
++CROSS ?=
++
++CPU_CFLAGS  ?= -mips64r2 
++CPU_LDFLAGS ?= -m elf64ltsmip 
++CPU_ASFLAGS ?= -felf64
++
++export ARCH CROSS CPU_CFLAGS CPU_LDFLAGS CPU_ASFLAGS
++
++RTE_OBJCOPY_TARGET = elf64-tradlittlemips
++RTE_OBJCOPY_ARCH = mips:loongson_3a
++
++export RTE_OBJCOPY_TARGET RTE_OBJCOPY_ARCH
+diff --git a/mk/machine/3A2K/rte.vars.mk b/mk/machine/3A2K/rte.vars.mk
+new file mode 100644
+index 0000000..c8256f1
+--- /dev/null
++++ b/mk/machine/3A2K/rte.vars.mk
+@@ -0,0 +1,57 @@
++#   BSD LICENSE
++#
++#   Copyright (C) EZchip Semiconductor Ltd. 2015.
++#
++#   Redistribution and use in source and binary forms, with or without
++#   modification, are permitted provided that the following conditions
++#   are met:
++#
++#     * Redistributions of source code must retain the above copyright
++#       notice, this list of conditions and the following disclaimer.
++#     * Redistributions in binary form must reproduce the above copyright
++#       notice, this list of conditions and the following disclaimer in
++#       the documentation and/or other materials provided with the
++#       distribution.
++#     * Neither the name of EZchip Semiconductor nor the names of its
++#       contributors may be used to endorse or promote products derived
++#       from this software without specific prior written permission.
++#
++#   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++#   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++#   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++#   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++#   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++#   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++#   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++#   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++#   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++#   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++#   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++#
++# machine:
++#
++#   - can define ARCH variable (overridden by cmdline value)
++#   - can define CROSS variable (overridden by cmdline value)
++#   - define MACHINE_CFLAGS variable (overridden by cmdline value)
++#   - define MACHINE_LDFLAGS variable (overridden by cmdline value)
++#   - define MACHINE_ASFLAGS variable (overridden by cmdline value)
++#   - can define CPU_CFLAGS variable (overridden by cmdline value) that
++#     overrides the one defined in arch.
++#   - can define CPU_LDFLAGS variable (overridden by cmdline value) that
++#     overrides the one defined in arch.
++#   - can define CPU_ASFLAGS variable (overridden by cmdline value) that
++#     overrides the one defined in arch.
++#   - may override any previously defined variable
++#
++
++# ARCH =
++# CROSS =
++# MACHINE_CFLAGS =
++# MACHINE_LDFLAGS =
++# MACHINE_ASFLAGS =
++# CPU_CFLAGS =
++# CPU_LDFLAGS =
++# CPU_ASFLAGS =
++
++MACHINE_CFLAGS =
+diff --git a/mk/toolchain/gcc/rte.vars.mk b/mk/toolchain/gcc/rte.vars.mk
+index f19305e..4c88a4d 100644
+--- a/mk/toolchain/gcc/rte.vars.mk
++++ b/mk/toolchain/gcc/rte.vars.mk
+@@ -81,6 +81,12 @@ ifeq ($(shell test $(GCC_VERSION) -lt 47 && echo 1), 1)
+ WERROR_FLAGS += -Wno-uninitialized
+ endif
+ 
++# There are many issues reported for loongson architecture
++# which are not necessarily fatal. Report as warnings.
++ifeq ($(CONFIG_RTE_ARCH_LOONGSON),y)
++WERROR_FLAGS += -Wno-error=cast-align -Wno-error=unused-parameter -Wno-error=uninitialized -Wno-error=unused-variable -Wno-error=pragmas
++endif
++
+ HOST_WERROR_FLAGS := $(WERROR_FLAGS)
+ 
+ ifeq ($(shell test $(HOST_GCC_VERSION) -gt 70 && echo 1), 1)
+@@ -98,7 +104,9 @@ WERROR_FLAGS += -Wno-format-truncation
+ endif
+ 
+ # disable packed member unalign warnings
++ifeq ($(CONFIG_RTE_ARCH_LOONGSON),n)
+ WERROR_FLAGS += -Wno-address-of-packed-member
++endif
+ 
+ export CC AS AR LD OBJCOPY OBJDUMP STRIP READELF
+ export TOOLCHAIN_CFLAGS TOOLCHAIN_LDFLAGS TOOLCHAIN_ASFLAGS
+-- 
+2.2.1
+

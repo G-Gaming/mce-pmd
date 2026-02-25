@@ -1,0 +1,63 @@
+From bb042481b7a00ce255d9c12b3bfc70216bc2b011 Mon Sep 17 00:00:00 2001
+From: Wenbo Cao <caowenbo@mucse.com>
+Date: Fri, 8 Jul 2022 05:38:26 +0000
+Subject: [PATCH] net/mce: add PMD skeleton
+
+Signed-off-by: Wenbo Cao <caowenbo@mucse.com>
+---
+ config/common_linux     | 2 ++
+ drivers/net/Makefile    | 1 +
+ drivers/net/meson.build | 1 +
+ mk/rte.app.mk           | 2 ++
+ 4 files changed, 6 insertions(+)
+
+diff --git a/config/common_linux b/config/common_linux
+index 816810671a..913b028371 100644
+--- a/config/common_linux
++++ b/config/common_linux
+@@ -66,3 +66,5 @@ CONFIG_RTE_LIBRTE_HINIC_PMD=y
+ # Hisilicon HNS3 PMD driver
+ #
+ CONFIG_RTE_LIBRTE_HNS3_PMD=y
++
++CONFIG_RTE_LIBRTE_MCE_PMD=y
+diff --git a/drivers/net/Makefile b/drivers/net/Makefile
+index 361974eacf..9a3dda3add 100644
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -59,6 +59,7 @@ DIRS-$(CONFIG_RTE_LIBRTE_SFC_EFX_PMD) += sfc
+ DIRS-$(CONFIG_RTE_LIBRTE_PMD_SZEDATA2) += szedata2
+ DIRS-$(CONFIG_RTE_LIBRTE_PMD_TAP) += tap
+ DIRS-$(CONFIG_RTE_LIBRTE_THUNDERX_NICVF_PMD) += thunderx
++DIRS-$(CONFIG_RTE_LIBRTE_MCE_PMD) += mce
+ DIRS-$(CONFIG_RTE_LIBRTE_VDEV_NETVSC_PMD) += vdev_netvsc
+ DIRS-$(CONFIG_RTE_LIBRTE_VIRTIO_PMD) += virtio
+ DIRS-$(CONFIG_RTE_LIBRTE_VMXNET3_PMD) += vmxnet3
+diff --git a/drivers/net/meson.build b/drivers/net/meson.build
+index d56b24051a..d31b1803e1 100644
+--- a/drivers/net/meson.build
++++ b/drivers/net/meson.build
+@@ -50,6 +50,7 @@ drivers = ['af_packet',
+ 	'szedata2',
+ 	'tap',
+ 	'thunderx',
++	'mce',
+ 	'vdev_netvsc',
+ 	'vhost',
+ 	'virtio',
+diff --git a/mk/rte.app.mk b/mk/rte.app.mk
+index a544259970..a89011220f 100644
+--- a/mk/rte.app.mk
++++ b/mk/rte.app.mk
+@@ -252,6 +252,8 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_VMXNET3_PMD)    += -lrte_pmd_vmxnet3_uio
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_VMBUS)          += -lrte_bus_vmbus
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_NETVSC_PMD)     += -lrte_pmd_netvsc
+
++_LDLIBS-$(CONFIG_RTE_LIBRTE_MCE_PMD) += -lrte_pmd_mce
++
+ ifeq ($(CONFIG_RTE_LIBRTE_BBDEV),y)
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_BBDEV_NULL)     += -lrte_pmd_bbdev_null
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_BBDEV_FPGA_LTE_FEC) += -lrte_pmd_bbdev_fpga_lte_fec
+-- 
+2.27.0
+

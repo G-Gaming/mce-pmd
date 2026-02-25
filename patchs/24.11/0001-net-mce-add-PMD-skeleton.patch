@@ -1,0 +1,25 @@
+From 5706858539fc7f9b00a4d4d5d856bfc6a954b83e Mon Sep 17 00:00:00 2001
+From: Wenbo Cao <caowenbo@mucse.com>
+Date: Wed, 3 Aug 2022 12:46:20 +0800
+Subject: [PATCH] net/mce: add PMD skeleton
+
+Signed-off-by: Wenbo Cao <caowenbo@mucse.com>
+---
+ drivers/net/meson.build | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/meson.build b/drivers/net/meson.build
+index 2355d1cde8..0910fa744e 100644
+--- a/drivers/net/meson.build
++++ b/drivers/net/meson.build
+@@ -56,6 +56,7 @@ drivers = [
+         'tap',
+         'thunderx',
+         'txgbe',
++        'mce',
+         'vdev_netvsc',
+         'vhost',
+         'virtio',
+-- 
+2.25.1
+

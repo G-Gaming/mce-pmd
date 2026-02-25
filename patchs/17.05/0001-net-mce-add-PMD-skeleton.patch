@@ -1,0 +1,56 @@
+From df5911cf291f142abdf62006ed52f1f9c90d0154 Mon Sep 17 00:00:00 2001
+From: Wenbo Cao <caowenbo@tsinghua-wx.org>
+Date: Sat, 23 Jan 2021 16:29:29 +0800
+Subject: [PATCH] net/mce: add PMD skeleton
+
+mce driver init and enable build option for mce
+pmd driver
+
+For we don't actually porting to dpdk-plaform just atf a plugin to
+dpdk
+
+Signed-off-by: Wenbo Cao <caowenbo@tsinghua-wx.org>
+---
+ config/common_linuxapp | 2 ++
+ drivers/net/Makefile   | 3 +++
+ mk/rte.app.mk          | 2 ++
+ 3 files changed, 7 insertions(+)
+
+diff --git a/config/common_linuxapp b/config/common_linuxapp
+index b3cf41b..1cf7929 100644
+--- a/config/common_linuxapp
++++ b/config/common_linuxapp
+@@ -48,3 +48,5 @@ CONFIG_RTE_LIBRTE_AVP_PMD=y
+ CONFIG_RTE_LIBRTE_NFP_PMD=y
+ CONFIG_RTE_LIBRTE_POWER=y
+ CONFIG_RTE_VIRTIO_USER=y
++
++CONFIG_RTE_LIBRTE_MCE_PMD=y
+diff --git a/drivers/net/Makefile b/drivers/net/Makefile
+index 35ed813..2f2e3de 100644
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -108,4 +108,7 @@ DIRS-$(CONFIG_RTE_LIBRTE_PMD_VHOST) += vhost
+ endif # $(CONFIG_RTE_LIBRTE_VHOST)
+ DEPDIRS-vhost = $(core-libs) librte_vhost
+ 
++DIRS-$(CONFIG_RTE_LIBRTE_MCE_PMD) += mce
++DEPDIRS-mce = $(core-libs)
++
+ include $(RTE_SDK)/mk/rte.subdir.mk
+diff --git a/mk/rte.app.mk b/mk/rte.app.mk
+index bcaf1b3..1fa55ae 100644
+--- a/mk/rte.app.mk
++++ b/mk/rte.app.mk
+@@ -180,6 +180,8 @@ endif # CONFIG_RTE_LIBRTE_DPAA2_PMD
+ 
+ endif # !CONFIG_RTE_BUILD_SHARED_LIBS
+ 
++_LDLIBS-$(CONFIG_RTE_LIBRTE_MCE_PMD) += -lrte_pmd_mce
++
+ _LDLIBS-y += --no-whole-archive
+ 
+ ifeq ($(CONFIG_RTE_BUILD_SHARED_LIB),n)
+-- 
+2.7.4
+

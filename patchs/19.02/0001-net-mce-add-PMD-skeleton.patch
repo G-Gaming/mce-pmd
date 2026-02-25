@@ -1,0 +1,64 @@
+From 2dedc5db385a674e60e5545cf71679b4c5252b07 Mon Sep 17 00:00:00 2001
+From: Wenbo Cao <caowenbo@mucse.com>
+Date: Wed, 13 Aug 2025 14:30:41 +0800
+Subject: [PATCH] mce driver init and enable build option for mce pmd
+
+Signed-off-by: Wenbo Cao <caowenbo@mucse.com>
+---
+ config/common_linuxapp  | 2 ++
+ drivers/net/Makefile    | 1 +
+ drivers/net/meson.build | 2 +-
+ mk/rte.app.mk           | 2 ++
+ 4 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/config/common_linuxapp b/config/common_linuxapp
+index 6c1c8d0f47..5378ad6752 100644
+--- a/config/common_linuxapp
++++ b/config/common_linuxapp
+@@ -56,3 +56,5 @@ CONFIG_RTE_LIBRTE_PMD_DPAA2_QDMA_RAWDEV=y
+ # NXP ENETC PMD Driver
+ #
+ CONFIG_RTE_LIBRTE_ENETC_PMD=y
++# N10
++CONFIG_RTE_LIBRTE_MCE_PMD=y
+diff --git a/drivers/net/Makefile b/drivers/net/Makefile
+index 670d7f75a6..e5769ccf33 100644
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -52,6 +52,7 @@ DIRS-$(CONFIG_RTE_LIBRTE_THUNDERX_NICVF_PMD) += thunderx
+ DIRS-$(CONFIG_RTE_LIBRTE_VDEV_NETVSC_PMD) += vdev_netvsc
+ DIRS-$(CONFIG_RTE_LIBRTE_VIRTIO_PMD) += virtio
+ DIRS-$(CONFIG_RTE_LIBRTE_VMXNET3_PMD) += vmxnet3
++DIRS-$(CONFIG_RTE_LIBRTE_MCE_PMD) += mce
+ 
+ ifeq ($(CONFIG_RTE_LIBRTE_KNI),y)
+ DIRS-$(CONFIG_RTE_LIBRTE_PMD_KNI) += kni
+diff --git a/drivers/net/meson.build b/drivers/net/meson.build
+index 45da3bb1ee..5d58b87b3a 100644
+--- a/drivers/net/meson.build
++++ b/drivers/net/meson.build
+@@ -28,7 +28,7 @@ drivers = ['af_packet',
+ 	'mvpp2',
+ 	'netvsc',
+ 	'nfp',
+-	'null', 'octeontx', 'pcap', 'qede', 'ring',
++	'null', 'octeontx', 'pcap', 'qede', 'ring', 'mce',
+ 	'sfc',
+ 	'softnic',
+ 	'szedata2',
+diff --git a/mk/rte.app.mk b/mk/rte.app.mk
+index 8a4f0f4e50..d42425c1fc 100644
+--- a/mk/rte.app.mk
++++ b/mk/rte.app.mk
+@@ -194,6 +194,8 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_RING)       += -lrte_pmd_ring
+ ifeq ($(CONFIG_RTE_LIBRTE_SCHED),y)
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_SOFTNIC)      += -lrte_pmd_softnic
+ endif
++_LDLIBS-$(CONFIG_RTE_LIBRTE_MCE_PMD) += -lrte_pmd_mce
++
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_SFC_EFX_PMD)    += -lrte_pmd_sfc_efx
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_SZEDATA2)   += -lrte_pmd_szedata2 -lsze2
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_TAP)        += -lrte_pmd_tap
+-- 
+2.43.0
+

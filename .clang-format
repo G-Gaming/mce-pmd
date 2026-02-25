@@ -1,0 +1,134 @@
+# SPDX-License-Identifier: GPL-2.0
+#
+# clang-format configuration file. Intended for clang-format >= 11.
+#
+# For more information, see:
+#
+#   Documentation/dev-tools/clang-format.rst
+#   https://clang.llvm.org/docs/ClangFormat.html
+#   https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+#
+---
+AlignConsecutiveMacros: AcrossEmptyLinesAndComments # 连续宏定义右对齐（跨空行和注释）
+AccessModifierOffset: -4                           # 访问修饰符（public/private）缩进偏移量
+AlignAfterOpenBracket: Align                       # 开括号后对齐
+AlignConsecutiveAssignments: false                 # 禁止连续赋值语句对齐
+AlignConsecutiveDeclarations: false                # 禁止连续声明对齐
+AlignEscapedNewlines: Left                         # 反斜杠换行符左对齐
+AlignOperands: true                                # 操作数对齐
+AlignTrailingComments: false                       # 禁止行尾注释对齐
+AllowAllParametersOfDeclarationOnNextLine: false  # 禁止函数声明参数换行
+AllowShortBlocksOnASingleLine: Never               # 禁止短代码块单行显示
+AllowShortCaseLabelsOnASingleLine: false          # 禁止短case标签单行显示
+AllowShortFunctionsOnASingleLine: None            # 完全禁止短函数单行显示
+AllowShortIfStatementsOnASingleLine: Never # 禁止短if语句单行显示 Never：强制所有 if添加大括号 WithoutElse：无 else时单行可省略大括号 AllIfsAndElse：所有单行 if/else均可省略大括号（含风险）
+  #AllowShortBlocksOnASingleLine: Never         # 禁止单行代码块，强制换行
+AllowShortLoopsOnASingleLine: false                # 禁止短循环单行显示
+AlwaysBreakAfterDefinitionReturnType: None         # 函数定义返回值不强制换行
+AlwaysBreakAfterReturnType: None                   # 函数声明返回值不强制换行
+AlwaysBreakBeforeMultilineStrings: false           # 多行字符串前不强制换行
+AlwaysBreakTemplateDeclarations: false             # 模板声明不强制换行
+BinPackArguments: true                            # 函数参数自动换行打包
+BinPackParameters: true                            # 函数声明参数自动换行打包
+
+# 大括号换行规则
+BraceWrapping:
+  AfterClass: false                 # 类定义后不换行
+  AfterControlStatement: false     # 控制语句后不换行
+  AfterEnum: false                  # 枚举定义后不换行
+  AfterFunction: true               # 函数定义后换行
+  AfterNamespace: true              # 命名空间后换行
+  AfterObjCDeclaration: false       # Objective-C声明后不换行
+  AfterStruct: false                # 结构体定义后不换行
+  AfterUnion: false                 # 联合体定义后不换行
+  AfterExternBlock: false           # extern块后不换行
+  BeforeCatch: false               # catch前不换行
+  BeforeElse: false                 # else前不换行
+  IndentBraces: false               # 大括号不额外缩进
+  SplitEmptyFunction: true          # 空函数体换行
+  SplitEmptyRecord: true            # 空记录体换行
+  SplitEmptyNamespace: true          # 空命名空间换行
+
+BreakBeforeBinaryOperators: None    # 二元操作符前不换行
+BreakBeforeBraces: Custom           # 使用自定义大括号换行规则
+BreakBeforeInheritanceComma: false  # 继承列表逗号前不换行
+BreakBeforeTernaryOperators: false  # 三元操作符前不换行
+BreakConstructorInitializersBeforeComma: false  # 构造函数初始化列表逗号前不换行
+BreakConstructorInitializers: BeforeComma  # 构造函数初始化列表在逗号前换行
+BreakAfterJavaFieldAnnotations: false  # Java字段注解后不换行
+BreakStringLiterals: false          # 禁止字符串字面量换行
+ColumnLimit: 80                     # 行宽限制为80字符
+CommentPragmas: '^ IWYU pragma:'    # 匹配IWYU编译指示的正则表达式
+CompactNamespaces: false            # 禁止紧凑命名空间格式
+ConstructorInitializerAllOnOneLineOrOnePerLine: false  # 构造函数初始化列表不强制单行或多行
+ConstructorInitializerIndentWidth: 8  # 构造函数初始化列表缩进宽度
+ContinuationIndentWidth: 8          # 续行缩进宽度
+Cpp11BracedListStyle: false         # 不使用C++11大括号初始化风格
+DerivePointerAlignment: false       # 不自动推导指针对齐方式
+DisableFormat: false                # 不禁用格式化
+ExperimentalAutoDetectBinPacking: false  # 禁用实验性自动打包检测
+FixNamespaceComments: false         # 不修复命名空间注释
+
+# 特殊宏处理列表（用于foreach类宏）宏函数不受处理
+ForEachMacros:
+  - 'TAILQ_FOREACH'
+  - 'logd_if'
+  - '__ata_qc_for_each'
+  - '__bio_for_each_bvec'
+  # ...（其他宏定义，完整列表见原文件）
+  - 'zorro_for_each_dev'
+  - 'RTE_TAILQ_FOREACH_SAFE'
+
+IncludeBlocks: Preserve              # 保留include块顺序
+IncludeCategories:
+  - Regex: '.*'                     # 包含所有头文件
+    Priority: 1                     # 优先级为1
+IncludeIsMainRegex: '(Test)?$'      # 主包含文件正则匹配
+IndentCaseLabels: false             # case标签不缩进（与switch对齐）
+IndentGotoLabels: false             # goto标签不缩进
+IndentPPDirectives: None            # 预处理指令不额外缩进
+IndentWidth: 8                      # 缩进宽度为8字符
+IndentWrappedFunctionNames: false   # 换行函数名不缩进
+JavaScriptQuotes: Leave             # JavaScript引号保持原样
+JavaScriptWrapImports: true         # JavaScript导入换行
+KeepEmptyLinesAtTheStartOfBlocks: false  # 块起始处不留空行
+MacroBlockBegin: ''                 # 宏块开始标记（空）
+MacroBlockEnd: ''                    # 宏块结束标记（空）
+MaxEmptyLinesToKeep: 1              # 最多保留1个空行
+NamespaceIndentation: None          # 命名空间不额外缩进
+ObjCBinPackProtocolList: Auto       # Objective-C协议列表自动打包
+ObjCBlockIndentWidth: 8             # Objective-C块缩进宽度
+ObjCSpaceAfterProperty: true        # Objective-C属性后加空格
+ObjCSpaceBeforeProtocolList: true   # Objective-C协议列表前加空格
+
+# 格式惩罚规则（控制换行行为）
+PenaltyBreakAssignment: 10          # 赋值语句换行惩罚值
+PenaltyBreakBeforeFirstCallParameter: 30  # 函数第一个参数前换行惩罚值
+PenaltyBreakComment: 10             # 注释换行惩罚值
+PenaltyBreakFirstLessLess: 0        # 首个<<操作符换行惩罚值
+PenaltyBreakString: 10              # 字符串换行惩罚值
+PenaltyExcessCharacter: 100         # 超行宽字符惩罚值
+PenaltyReturnTypeOnItsOwnLine: 60   # 返回类型单独一行惩罚值
+
+PointerAlignment: Right             # 指针右对齐（int* ptr）
+ReflowComments: false               # 不重排注释
+SortIncludes: false                 # 不排序include
+SortUsingDeclarations: false        # 不排序using声明
+SpaceAfterCStyleCast: false         # C风格转换后不加空格
+SpaceAfterTemplateKeyword: true     # template关键字后加空格
+SpaceBeforeAssignmentOperators: true  # 赋值操作符前加空格
+SpaceBeforeCtorInitializerColon: true  # 构造函数初始化冒号前加空格
+SpaceBeforeInheritanceColon: true   # 继承冒号前加空格
+SpaceBeforeParens: ControlStatementsExceptForEachMacros  # 控制语句括号前加空格（foreach宏除外）
+SpaceBeforeRangeBasedForLoopColon: true  # 基于范围的for循环冒号前加空格
+SpaceInEmptyParentheses: false      # 空括号内不加空格
+SpacesBeforeTrailingComments: 1     # 行尾注释前加1个空格
+SpacesInAngles: false                # 模板尖括号内不加空格
+SpacesInContainerLiterals: false     # 容器字面量内不加空格
+SpacesInCStyleCastParentheses: false  # C风格转换括号内不加空格
+SpacesInParentheses: false           # 圆括号内不加空格
+SpacesInSquareBrackets: false        # 方括号内不加空格
+Standard: Cpp03                     # 使用C++03标准
+TabWidth: 8                         # Tab宽度为8字符
+UseTab: Always                      # 始终使用Tab缩进
+...

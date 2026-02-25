@@ -1,0 +1,80 @@
+From 5c0a95b4e8f273bc6de943369ba5899f06efb77a Mon Sep 17 00:00:00 2001
+From: Wenbo Cao <caowenbo@mucse.com>
+Date: Wed, 16 Mar 2022 06:43:37 -0700
+Subject: [PATCH] net/mce: add PMD skeleton
+
+Signed-off-by: Wenbo Cao <caowenbo@mucse.com>
+---
+ config/common_linuxapp | 9 +++++----
+ drivers/net/Makefile   | 1 +
+ mk/rte.app.mk          | 1 +
+ 3 files changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/config/common_linuxapp b/config/common_linuxapp
+index 0de43d5..1992330 100644
+--- a/config/common_linuxapp
++++ b/config/common_linuxapp
+@@ -86,7 +86,7 @@ CONFIG_RTE_BUILD_SHARED_LIB=n
+ #
+ # Combine to one single library
+ #
+-CONFIG_RTE_BUILD_COMBINE_LIBS=n
++CONFIG_RTE_BUILD_COMBINE_LIBS=y
+ 
+ #
+ # Use newest code breaking previous ABI
+@@ -107,7 +107,7 @@ CONFIG_RTE_LOG_HISTORY=256
+ CONFIG_RTE_LIBEAL_USE_HPET=n
+ CONFIG_RTE_EAL_ALLOW_INV_SOCKET_ID=n
+ CONFIG_RTE_EAL_ALWAYS_PANIC_ON_ERROR=n
+-CONFIG_RTE_EAL_IGB_UIO=y
++CONFIG_RTE_EAL_IGB_UIO=n
+ CONFIG_RTE_EAL_VFIO=y
+ CONFIG_RTE_MALLOC_DEBUG=n
+ 
+@@ -237,6 +237,7 @@ CONFIG_RTE_LIBRTE_CXGBE_DEBUG_RX=n
+ CONFIG_RTE_LIBRTE_ENIC_PMD=y
+ CONFIG_RTE_LIBRTE_ENIC_DEBUG=n
+ 
++CONFIG_RTE_LIBRTE_MCE_PMD=y
+ #
+ # Compile burst-oriented VIRTIO PMD driver
+ #
+@@ -424,8 +425,8 @@ CONFIG_RTE_PIPELINE_STATS_COLLECT=n
+ #
+ # Compile librte_kni
+ #
+-CONFIG_RTE_LIBRTE_KNI=y
+-CONFIG_RTE_KNI_KMOD=y
++CONFIG_RTE_LIBRTE_KNI=n
++CONFIG_RTE_KNI_KMOD=n
+ CONFIG_RTE_KNI_PREEMPT_DEFAULT=y
+ CONFIG_RTE_KNI_KO_DEBUG=n
+ CONFIG_RTE_KNI_VHOST=n
+diff --git a/drivers/net/Makefile b/drivers/net/Makefile
+index 5ebf963..10f44b3 100644
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -48,6 +48,7 @@ DIRS-$(CONFIG_RTE_LIBRTE_PMD_RING) += ring
+ DIRS-$(CONFIG_RTE_LIBRTE_VIRTIO_PMD) += virtio
+ DIRS-$(CONFIG_RTE_LIBRTE_VMXNET3_PMD) += vmxnet3
+ DIRS-$(CONFIG_RTE_LIBRTE_PMD_XENVIRT) += xenvirt
++DIRS-$(CONFIG_RTE_LIBRTE_MCE_PMD) += mce
+ 
+ include $(RTE_SDK)/mk/rte.sharelib.mk
+ include $(RTE_SDK)/mk/rte.subdir.mk
+diff --git a/mk/rte.app.mk b/mk/rte.app.mk
+index 3871205..0423ac0 100644
+--- a/mk/rte.app.mk
++++ b/mk/rte.app.mk
+@@ -138,6 +138,7 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_FM10K_PMD)      += -lrte_pmd_fm10k
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_IXGBE_PMD)      += -lrte_pmd_ixgbe
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_E1000_PMD)      += -lrte_pmd_e1000
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_MLX4_PMD)       += -lrte_pmd_mlx4
++_LDLIBS-$(CONFIG_RTE_LIBRTE_MCE_PMD)     += -lrte_pmd_mce
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_MPIPE_PMD)      += -lrte_pmd_mpipe -lgxio
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_RING)       += -lrte_pmd_ring
+ _LDLIBS-$(CONFIG_RTE_LIBRTE_PMD_PCAP)       += -lrte_pmd_pcap
+-- 
+2.7.4
+

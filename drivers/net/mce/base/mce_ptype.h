@@ -1,0 +1,116 @@
+#ifndef _MCE_PTYPE_H_
+#define _MCE_PTYPE_H_
+
+#include <rte_version.h>
+static inline uint32_t
+mce_get_rx_parse_ptype(uint32_t ptypes)
+{
+	static const uint32_t outer_l2_type_table[32]
+		__rte_cache_aligned = {
+		[0] = RTE_PTYPE_L2_ETHER,
+		[1] = RTE_PTYPE_L2_ETHER_TIMESYNC,
+		[2] = RTE_PTYPE_L2_ETHER_VLAN,
+		[3] = RTE_PTYPE_L2_ETHER_VLAN, /* vlan + ptp */
+		/* 3 */
+		[4] = RTE_PTYPE_L2_ETHER_MPLS, /* 0x8847 mpls */
+		[6] = RTE_PTYPE_L2_ETHER_VLAN, /* vlan + mpls */
+		/* 5,7 */
+		[8] = RTE_PTYPE_L2_ETHER_MPLS, /* 0x8848 mpls */
+		[10] = RTE_PTYPE_L2_ETHER_VLAN, /* vlan + mpls */
+		/* 9,11 rev */
+		[12] = RTE_PTYPE_UNKNOWN,
+		[14] = RTE_PTYPE_L2_ETHER_VLAN,
+		/* 13,15 rev */
+		[16] = RTE_PTYPE_L2_ETHER_NSH,
+		/* 17-19 rev */
+		[22] = RTE_PTYPE_L2_ETHER_QINQ,
+		/* 21-23 rev */
+		[24] = RTE_PTYPE_L2_ETHER_FCOE,
+	};
+	static const uint32_t l3l4_type_table[64]
+		__rte_cache_aligned = {
+		[0] = RTE_PTYPE_UNKNOWN,
+		[1] = RTE_PTYPE_L3_IPV4_EXT_UNKNOWN,
+		[2] = RTE_PTYPE_L3_IPV6_EXT_UNKNOWN,
+		[3] = RTE_PTYPE_L2_ETHER_ARP,
+		/* 4 rev */
+		[5] = RTE_PTYPE_L3_IPV4_EXT_UNKNOWN | RTE_PTYPE_L4_FRAG,
+		[6] = RTE_PTYPE_L3_IPV6_EXT_UNKNOWN | RTE_PTYPE_L4_FRAG,
+		/* 7-8 rev */
+		[9] = RTE_PTYPE_L3_IPV4_EXT_UNKNOWN | RTE_PTYPE_L4_UDP,
+		[10] = RTE_PTYPE_L3_IPV6_EXT_UNKNOWN | RTE_PTYPE_L4_UDP,
+		/* 11-12 rev */
+		[13] = RTE_PTYPE_L3_IPV4_EXT_UNKNOWN | RTE_PTYPE_L4_TCP,
+		[14] = RTE_PTYPE_L3_IPV6_EXT_UNKNOWN | RTE_PTYPE_L4_TCP,
+		/* 15-16 rev */
+		[17] = RTE_PTYPE_L3_IPV4_EXT_UNKNOWN | RTE_PTYPE_L4_SCTP,
+		[18] = RTE_PTYPE_L3_IPV6_EXT_UNKNOWN | RTE_PTYPE_L4_SCTP,
+		/* 19-20 rev */
+		[21] = RTE_PTYPE_L3_IPV4_EXT_UNKNOWN | RTE_PTYPE_L4_ICMP,
+		[22] = RTE_PTYPE_L3_IPV6_EXT_UNKNOWN | RTE_PTYPE_L4_ICMP,
+		/* 23-24 rev */
+		[25] = RTE_PTYPE_L3_IPV4_EXT_UNKNOWN | RTE_PTYPE_TUNNEL_ESP,
+		[26] = RTE_PTYPE_L3_IPV6_EXT_UNKNOWN | RTE_PTYPE_TUNNEL_ESP,
+		/* 27-28 rev */
+		[29] = RTE_PTYPE_L3_IPV4_EXT_UNKNOWN | RTE_PTYPE_L4_NONFRAG,
+		[30] = RTE_PTYPE_L3_IPV6_EXT_UNKNOWN | RTE_PTYPE_L4_NONFRAG,
+		/* 31-32 rev */
+		[33] = RTE_PTYPE_L3_IPV4_EXT_UNKNOWN | RTE_PTYPE_L4_UDP | RTE_PTYPE_TUNNEL_ESP,
+		[34] = RTE_PTYPE_L3_IPV6_EXT_UNKNOWN | RTE_PTYPE_L4_UDP | RTE_PTYPE_TUNNEL_ESP,
+	};
+	static const uint32_t tunnel_type[16]
+		__rte_cache_aligned = {
+		/* mac ipv4 vxlan */
+		[0] = RTE_PTYPE_UNKNOWN,
+		/* inner_no_ether */
+		[1] = RTE_PTYPE_TUNNEL_VXLAN,
+		[2] = RTE_PTYPE_TUNNEL_GRENAT,
+		[3] = RTE_PTYPE_TUNNEL_GENEVE,
+		[4] = RTE_PTYPE_TUNNEL_GTPU,
+		[5] = RTE_PTYPE_TUNNEL_GTPC,
+		[6] = RTE_PTYPE_TUNNEL_IP,
+		[7] = RTE_PTYPE_TUNNEL_MPLS_IN_UDP,
+		/* 8 rev */
+		[9] = RTE_PTYPE_TUNNEL_VXLAN | RTE_PTYPE_INNER_L2_ETHER,
+		[11] = RTE_PTYPE_TUNNEL_GENEVE | RTE_PTYPE_INNER_L2_ETHER,
+		[12] = RTE_PTYPE_TUNNEL_GTPU | RTE_PTYPE_INNER_L2_ETHER,
+		[13] = RTE_PTYPE_TUNNEL_GTPC | RTE_PTYPE_INNER_L2_ETHER,
+		[14] = RTE_PTYPE_TUNNEL_IP | RTE_PTYPE_INNER_L2_ETHER,
+		[15] = RTE_PTYPE_TUNNEL_MPLS_IN_UDP | RTE_PTYPE_INNER_L2_ETHER,
+	};
+	static const uint32_t inner_l3l4_type[32]
+		__rte_cache_aligned = {
+		[0] = RTE_PTYPE_UNKNOWN,
+		[1] = RTE_PTYPE_INNER_L3_IPV4_EXT_UNKNOWN,
+		[2] = RTE_PTYPE_INNER_L3_IPV6_EXT_UNKNOWN,
+		/* inner l2_arp */
+		/* [3] = RTE_PTYPE_INNER_L2_ETHER_ARP */
+		/* 4 rev */
+		[5] = RTE_PTYPE_INNER_L3_IPV4_EXT_UNKNOWN | RTE_PTYPE_INNER_L4_FRAG,
+		[6] = RTE_PTYPE_INNER_L3_IPV6_EXT_UNKNOWN | RTE_PTYPE_INNER_L4_FRAG,
+		/* 7-8 rev */
+		[9] = RTE_PTYPE_INNER_L3_IPV4_EXT_UNKNOWN | RTE_PTYPE_INNER_L4_UDP,
+		[10] = RTE_PTYPE_INNER_L3_IPV6_EXT_UNKNOWN | RTE_PTYPE_INNER_L4_UDP,
+		/* 11-12 rev */
+		[13] = RTE_PTYPE_INNER_L3_IPV4_EXT_UNKNOWN | RTE_PTYPE_INNER_L4_TCP,
+		[14] = RTE_PTYPE_INNER_L3_IPV6_EXT_UNKNOWN | RTE_PTYPE_INNER_L4_TCP,
+		/* 15-16 rev */
+		[17] = RTE_PTYPE_INNER_L3_IPV4_EXT_UNKNOWN | RTE_PTYPE_INNER_L4_SCTP,
+		[18] = RTE_PTYPE_INNER_L3_IPV6_EXT_UNKNOWN | RTE_PTYPE_INNER_L4_SCTP,
+		/* 19-20 rev */
+		[21] = RTE_PTYPE_INNER_L3_IPV4_EXT_UNKNOWN | RTE_PTYPE_INNER_L4_ICMP,
+		[22] = RTE_PTYPE_INNER_L3_IPV6_EXT_UNKNOWN | RTE_PTYPE_INNER_L4_ICMP,
+		/* 27-28 rev */
+		[29] = RTE_PTYPE_INNER_L3_IPV4_EXT_UNKNOWN | RTE_PTYPE_INNER_L4_NONFRAG,
+		[30] = RTE_PTYPE_INNER_L3_IPV6_EXT_UNKNOWN | RTE_PTYPE_INNER_L4_NONFRAG,
+	};
+	uint32_t packet_type = 0;
+
+	packet_type = outer_l2_type_table[ptypes & 0x1f];
+	packet_type |= l3l4_type_table[(ptypes >> 5) & 0x3f];
+	packet_type |= tunnel_type[(ptypes >> 11) & 0xf];
+	packet_type |= inner_l3l4_type[(ptypes >> 15) & 0x3f];
+
+	return packet_type;
+}
+#endif /* _MCE_PTYPE_H_ */

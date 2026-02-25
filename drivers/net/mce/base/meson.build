@@ -1,0 +1,17 @@
+base_sources = files(
+             'mce_common.c',
+             'mce_l2_filter.c',
+             'mce_fdir.c',
+             'mce_sched.c',
+             'mce_irq.c',
+             'mce_switch.c',
+             'mce_mbx.c',
+             'mce_pfvf.c',
+             'mce_vf.c',
+             'mce_pf2vfchnl.c',
+             'mce_fwchnl.c',
+             'mce_profile_mask.c',
+             'mce_rpu.c',
+	     'mce_vp_reg.c',
+	     'mce_ptp.c',
+)

@@ -1,0 +1,21 @@
+set breakpoint pending on
+set pagination off
+set confirm off
+set logging on
+set print pretty
+set print elements 0
+
+#file  ./app/dpdk-testpmd
+
+
+b main
+commands
+	#b mce_eth_dev_init
+	#b mce_setup_pf2fw_mbx_info
+	#b mce_mbx_set_pf_stat2fw 
+	b mce_rx_counters
+#	b mce_tx_queue_start
+end
+
+r -- -i
+

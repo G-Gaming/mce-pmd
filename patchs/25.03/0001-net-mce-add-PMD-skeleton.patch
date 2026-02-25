@@ -1,0 +1,25 @@
+From 9974633d7d4d8696147803f0440710e5e1aa5d96 Mon Sep 17 00:00:00 2001
+From: Wenbo Cao <caowenbo@mucse.com>
+Date: Thu, 28 Aug 2025 15:49:08 +0800
+Subject: [PATCH] net/mce: meson build setup
+
+Signed-off-by: Wenbo Cao <caowenbo@mucse.com>
+---
+ drivers/net/meson.build | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/meson.build b/drivers/net/meson.build
+index 460eb69e5b..bae9ba21c3 100644
+--- a/drivers/net/meson.build
++++ b/drivers/net/meson.build
+@@ -35,6 +35,7 @@ drivers = [
+         'intel/cpfl',  # depends on idpf, so must come after it
+         'ionic',
+         'mana',
++	'mce',
+         'memif',
+         'mlx4',
+         'mlx5',
+-- 
+2.25.1
+
