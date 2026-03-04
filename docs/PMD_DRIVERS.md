@@ -8,6 +8,7 @@ This document serves as the central reference point for the DPDK PMD Drivers.
 3. [Features](03_features.md)
 4. [Enable Features](04_enable_features.md)
 5. [Scripts](scripts/)
+6. [海光 7490 内存拓扑深度分析](hygon_7490_memory_topology.md)
 
 ----
 
